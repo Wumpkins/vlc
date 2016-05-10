@@ -1,1 +1,1 @@
-exception Invalid_array_expression
+Fatal error: exception Array_type_not_supported

@@ -17,3 +17,4 @@ test.log
 *.exp
 *.ptx
 sample-generated-programs/*
+*.iml

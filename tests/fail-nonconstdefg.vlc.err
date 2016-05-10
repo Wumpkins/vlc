@@ -1,1 +1,1 @@
-exception Non_constant_constants
+Fatal error: exception Non_constant_constants (*unused atm*)

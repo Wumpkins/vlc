@@ -6,7 +6,7 @@ exception Bad_dedent
 exception Array_parsing_error
 exception Invalid_data_type of string
 
-exception No_main_function of string (* Unused atm *)
+exception No_main_function (* Unused atm *)
 exception Lexing_error of string  (* Unused atm *)
 exception Parsing_error of string (* Unused atm *)
 (*-------------------------------------Processor-------------------------------------*)
@@ -16,7 +16,7 @@ exception Not_implemented_yet
 (*-------------------------------------Semantic Analyzer-------------------------------------*)
 exception Cannot_infer_expression_type
 exception Exception of string
-exception Already_declared
+exception Already_declared (* Already_declared and Variable_already_declared is redundant*)
 exception Name_not_found of string
 exception Invalid_environment
 exception Variable_not_found_in_scope of string
@@ -49,6 +49,7 @@ exception Cannot_perform_operation_on_string of string
 exception Cannot_perform_operation_on_array of string
 exception No_Hof_Allowed
 
+exception Array_type_not_supported (*unused atm*)
 exception Non_constant_constants (*unused atm*)
 exception Unexpected_return_type (*unused atm*)
 exception PTX_type_not_supported (*unused atm*)

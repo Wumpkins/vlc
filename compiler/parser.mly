@@ -1,6 +1,4 @@
-%{ open Ast;; (*open Exceptions;;*)
-
-    
+%{ open Ast;; (*open Exceptions;;*)    
     (* Converts keywords to appropriate datatype *)
     let string_to_data_type = function
 	| "string" -> String

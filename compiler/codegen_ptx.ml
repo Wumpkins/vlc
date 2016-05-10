@@ -85,17 +85,17 @@ let generate_ptx_unary_operator operator =
 
 let generate_ptx_data_type data_type = 
   let t = match data_type with
-  (*
-    | U8 -> ".u8"
-    | U16 -> ".u16"
-    | U32 -> ".u32"
-    | U64 -> ".u64"
-    | S8 -> ".s8"
-    | S16 -> ".s16"
-  *)
+    (*
+      | U8 -> ".u8"
+      | U16 -> ".u16"
+      | U32 -> ".u32"
+      | U64 -> ".u64"
+      | S8 -> ".s8"
+      | S16 -> ".s16"
+    *)
     | S32 -> ".s32"
     | Pred -> ".pred"
-(*     | S64 -> ".s64" *)
+    (*     | S64 -> ".s64" *)
     | F32 -> ".f32"
     | Ptx_Void -> ""
   in
@@ -124,14 +124,14 @@ let generate_ptx_variable_type vtype =
 let generate_ptx_variable variable = 
   let v = match variable with
     | Parameterized_variable_register(id, i) -> "%" ^ (generate_id(id)) ^ "<" ^
-      string_of_int(i) ^ ">"
+       string_of_int(i) ^ ">"
     | Variable_register(id, i) -> "%" ^ (generate_id(id)) ^ string_of_int(i)
     | Constant_int(i) -> string_of_int(i)
     | Constant_float(f) -> string_of_float(f)
     | Constant_bool(b) -> if b then "1" else "0"
     | Variable_array(id, i) -> (generate_id(id)) ^ "[" ^ string_of_int(i) ^ "]"
     | Variable_array_initialized(id, l_list) -> (generate_id(id)) ^ "[] = { " ^
-      (generate_list generate_ptx_literal ", " l_list) ^ "}"
+       (generate_list generate_ptx_literal ", " l_list) ^ "}"
     | Ptx_Variable(id) -> generate_id(id)
     | Ptx_Variable_initialized(id, l) -> generate_id(id) ^ " = " ^ generate_ptx_literal(l)
   in
@@ -140,47 +140,47 @@ let generate_ptx_variable variable =
 let generate_ptx_vdecl declaration =
   let v = match declaration with
     | Ptx_Vdecl (space, vtype, v) -> generate_ptx_state_space(space) ^ " " ^
-      (generate_ptx_variable_type(vtype)) ^ " " ^ (generate_ptx_variable(v)) ^ ";"
+       (generate_ptx_variable_type(vtype)) ^ " " ^ (generate_ptx_variable(v)) ^ ";"
   in
   sprintf "%s" v
 
 let rec generate_ptx_expression expression =
   let e = match expression with
     | Ptx_Binop(o, t, v1, v2, v3) -> generate_ptx_binary_operator(o) ^ generate_ptx_variable_type(t) 
-        ^ "     " ^ generate_ptx_expression(v1) ^ ", " ^ generate_ptx_expression(v2) ^ ", " 
-        ^ generate_ptx_expression(v3) ^ ";\n"
+       ^ "     " ^ generate_ptx_expression(v1) ^ ", " ^ generate_ptx_expression(v2) ^ ", " 
+       ^ generate_ptx_expression(v3) ^ ";\n"
     | Ptx_Unop(o, t, v1, v2) -> 
-        let unop = match o with 
-            | Ptx_Not -> generate_ptx_unary_operator(o) ^ 
-                generate_ptx_variable_type(t) ^ "     " ^ generate_ptx_expression(v1) 
-                ^ ", " ^ generate_ptx_expression(v2) ^ ";\n"
-            | Ptx_Negate -> generate_ptx_unary_operator(o) ^ 
-                generate_ptx_variable_type(t) ^ "     " ^ generate_ptx_expression(v1) 
-                ^ ", " ^ generate_ptx_expression(v2) ^ ";\n"
-            | Ptx_Plus_Plus -> "add" ^ generate_ptx_variable_type(t) ^ "     " ^
-                generate_ptx_expression(v1) ^ ", " ^ generate_ptx_expression(v2) ^
-                ", 1;\n"
-            | Ptx_Minus_Minus -> "sub" ^ generate_ptx_variable_type(t) ^ "     " ^
-                generate_ptx_expression(v1) ^ ", " ^ generate_ptx_expression(v2) ^
-                ", 1;\n"
-        in unop
+       let unop = match o with 
+         | Ptx_Not -> generate_ptx_unary_operator(o) ^ 
+            generate_ptx_variable_type(t) ^ "     " ^ generate_ptx_expression(v1) 
+            ^ ", " ^ generate_ptx_expression(v2) ^ ";\n"
+         | Ptx_Negate -> generate_ptx_unary_operator(o) ^ 
+            generate_ptx_variable_type(t) ^ "     " ^ generate_ptx_expression(v1) 
+            ^ ", " ^ generate_ptx_expression(v2) ^ ";\n"
+         | Ptx_Plus_Plus -> "add" ^ generate_ptx_variable_type(t) ^ "     " ^
+            generate_ptx_expression(v1) ^ ", " ^ generate_ptx_expression(v2) ^
+            ", 1;\n"
+         | Ptx_Minus_Minus -> "sub" ^ generate_ptx_variable_type(t) ^ "     " ^
+            generate_ptx_expression(v1) ^ ", " ^ generate_ptx_expression(v2) ^
+            ", 1;\n"
+       in unop
     | Ptx_vdecl(v) -> generate_ptx_vdecl(v) ^ "\n"
     | Ptx_Move(d, v1, v2) -> "mov" ^ generate_ptx_variable_type(d) ^ "     " ^
-      generate_ptx_expression(v1) ^ ", " ^ generate_ptx_expression(v2) ^ ";\n"
+       generate_ptx_expression(v1) ^ ", " ^ generate_ptx_expression(v2) ^ ";\n"
     | Ptx_Load(ss, d, v1, v2) -> "ld" ^ generate_ptx_state_space(ss) ^ generate_ptx_variable_type(d)
-      ^ "     " ^ generate_ptx_expression(v1) ^ ",[" ^ generate_ptx_expression(v2) ^ "];\n"
+       ^ "     " ^ generate_ptx_expression(v1) ^ ",[" ^ generate_ptx_expression(v2) ^ "];\n"
     | Ptx_Store(ss, d, v1, v2) -> "st" ^ generate_ptx_state_space(ss) ^ generate_ptx_variable_type(d)
-      ^ "     " ^ "[" ^ generate_ptx_expression(v1) ^ "]," ^ generate_ptx_expression(v2) ^ ";\n"
+       ^ "     " ^ "[" ^ generate_ptx_expression(v1) ^ "]," ^ generate_ptx_expression(v2) ^ ";\n"
     | Ptx_Branch(sub) -> "bra " ^ generate_id(sub) ^ ";\n"
     | Predicated_statement(v, s) -> "@" ^ generate_ptx_expression(v) ^ " " ^
-      generate_ptx_expression(s) ^ "\n"
+       generate_ptx_expression(s) ^ "\n"
     | Ptx_Convert (d1, d2, v1, v2) -> "cvt" ^ generate_ptx_variable_type(d1) ^
-      generate_ptx_variable_type(d2) ^ " " ^ generate_ptx_expression(v1) ^ ", " ^
-      generate_ptx_expression(v2) ^ ";\n"
+       generate_ptx_variable_type(d2) ^ " " ^ generate_ptx_expression(v1) ^ ", " ^
+       generate_ptx_expression(v2) ^ ";\n"
     | Ptx_Call(v1, id, vlist) -> "call " ^ generate_ptx_expression(v1) ^ " " ^
-      generate_id(id) ^ " " ^ (generate_list generate_ptx_expression " " vlist) ^ ";\n"
+       generate_id(id) ^ " " ^ (generate_list generate_ptx_expression " " vlist) ^ ";\n"
     | Ptx_Empty_Call(id, vlist) -> "call " ^ generate_id(id) 
-      ^ (generate_list generate_ptx_expression " " vlist) ^ ";\n"
+       ^ (generate_list generate_ptx_expression " " vlist) ^ ";\n"
     | Ptx_Return_void -> "ret;\n"
     | Ptx_value_return(i) -> raise Exceptions.Value_return_ptx_test
     | Ptx_expression_variable(v) -> generate_ptx_variable(v)
@@ -190,8 +190,8 @@ let rec generate_ptx_expression expression =
 
 let generate_ptx_subroutine subroutine = 
   let s =
-  generate_id subroutine.routine_name ^ ": \n" ^
-  generate_list generate_ptx_expression "\n" subroutine.routine_expressions
+    generate_id subroutine.routine_name ^ ": \n" ^
+      generate_list generate_ptx_expression "\n" subroutine.routine_expressions
   in
   sprintf "%s" s
 
@@ -213,8 +213,8 @@ let generate_ptx_function_type fun_type =
 let generate_ptx_pdecl p = 
   let pdecl = 
     ".param " ^ (generate_ptx_data_type(p.ptx_parameter_data_type)) ^ " " ^
-    (generate_ptx_state_space(p.ptx_parameter_state_space)) ^ " " ^
-    (generate_id(p.ptx_parameter_name))
+      (generate_ptx_state_space(p.ptx_parameter_state_space)) ^ " " ^
+      (generate_id(p.ptx_parameter_name))
   in
   sprintf "%s" pdecl
 
@@ -228,10 +228,10 @@ let generate_ptx_function f =
   let ptx_function_body = 
     ".visible " ^ generate_ptx_function_type(f.ptx_fdecl_type) ^ " " ^ (generate_id(f.ptx_fdecl_name)) ^ "(" 
     ^ (generate_list generate_ptx_pdecl "," f.ptx_fdecl_params) ^ ")\n\n" ^ 
-    "{\n" ^ 
-    (generate_list generate_ptx_vdecl "\n" f.register_decls ) ^ "\n\n\n" ^ 
-    (generate_list generate_ptx_statement "" f.ptx_fdecl_body) ^ 
-    "}"
+      "{\n" ^ 
+      (generate_list generate_ptx_vdecl "\n" f.register_decls ) ^ "\n\n\n" ^ 
+      (generate_list generate_ptx_statement "" f.ptx_fdecl_body) ^ 
+      "}"
   in
   let ptx_function_string = sprintf " \
   //Generated by VLC\n\
@@ -245,36 +245,36 @@ let generate_ptx_function f =
 (* Generates global ptx functions *)
 let generate_ptx_hof_function hof = 
   match Utils.idtos(hof.ptx_higher_order_function_type) with 
-    | "map" -> 
-    let ptx_function_string = ".visible .entry " ^ Utils.idtos(hof.ptx_higher_order_function_name)^ " ( " ^ 
-    ") "
-    in sprintf "%s" ptx_function_string
-(*     | "reduce" -> *)
-    | _ -> ""
+  | "map" -> 
+     let ptx_function_string = ".visible .entry " ^ Utils.idtos(hof.ptx_higher_order_function_name)^ " ( " ^ 
+       ") "
+     in sprintf "%s" ptx_function_string
+    (*     | "reduce" -> *)
+  | _ -> ""
 (* Main function for generating all ptx files*)
 let generate_ptx_function_files program = 
   (let ptx_hof_function_list = Utils.quint_trd(program) in
-  (* Generates global ptx functions*)
-  let rec generate_ptx_hof_files ptx_hof_func_list = 
-    match ptx_hof_func_list with 
-      | [] -> ()
-      | hd::tl -> 
+   (* Generates global ptx functions*)
+   let rec generate_ptx_hof_files ptx_hof_func_list = 
+     match ptx_hof_func_list with 
+     | [] -> ()
+     | hd::tl -> 
         let ptx_hof_function_string = generate_ptx_hof_function hd in
         write_ptx (Utils.idtos(hd.ptx_higher_order_function_name)) ptx_hof_function_string;
         print_endline ptx_hof_function_string;
         generate_ptx_hof_files tl
-  in
-  generate_ptx_hof_files ptx_hof_function_list);
+   in
+   generate_ptx_hof_files ptx_hof_function_list);
   (* Generates device ptx functions*)
   let ptx_function_list = Utils.quint_snd program in
   let rec generate_ptx_files ptx_func_list =
-  	match ptx_func_list with
-  		| [] -> ()
-  		| hd::tl ->
-        let ptx_function_string = (generate_ptx_function hd) in
-  			write_ptx (Utils.idtos(hd.ptx_fdecl_name)) ptx_function_string;
-        print_endline ptx_function_string;
-  			generate_ptx_files tl
+    match ptx_func_list with
+    | [] -> ()
+    | hd::tl ->
+       let ptx_function_string = (generate_ptx_function hd) in
+       write_ptx (Utils.idtos(hd.ptx_fdecl_name)) ptx_function_string;
+       print_endline ptx_function_string;
+       generate_ptx_files tl
   in generate_ptx_files ptx_function_list
 
 

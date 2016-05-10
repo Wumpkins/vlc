@@ -1,0 +1,3 @@
+int def main():
+  a = 5
+  return 1

@@ -8,7 +8,7 @@
 
 NVCC="nvcc"
 
-VLC="./compiler/vlc -c"
+VLC="sudo vlc -c"
 
 globallog=./tests/test.log
 rm -f $globallog
@@ -95,37 +95,37 @@ Check() {
     fi
 }
 
-# CheckFail() {
-#     error=0
-#     basename=`echo $1 | sed 's/.*\\///
-#                              s/.mc//'`
-#     reffile=`echo $1 | sed 's/.mc$//'`
-#     basedir="`echo $1 | sed 's/\/[^\/]*$//'`/."
+CheckFail() {
+     error=0
+     basename=`echo $1 | sed 's/.*\\///
+                              s/.mc//'`
+     reffile=`echo $1 | sed 's/.vlc$//'`
+     basedir="`echo $1 | sed 's/\/[^\/]*$//'`/."
 
-#     echo -n "$basename..."
+     echo -n "$basename..."
 
-#     echo 1>&2
-#     echo "###### Testing $basename" 1>&2
+     echo 1>&2
+     echo "###### Testing $basename" 1>&2
 
-#     generatedfiles=""
+     generatedfiles=""
 
-#     generatedfiles="$generatedfiles ${basename}.err ${basename}.diff" &&
-#     RunFail "$MICROC" "<" $1 "2>" "${basename}.err" ">>" $globallog &&
-#     Compare ${basename}.err ${reffile}.err ${basename}.diff
+     generatedfiles="$generatedfiles ./tests/${basename}.err ./tests/${basename}.diff" &&
+     RunFail "$VLC" "<" $1 "2>" "./tests/${basename}.err" ">>" $globallog &&
+     Compare ${basename}.err ./tests/${reffile}.err ./tests/${basename}.diff
 
-#     # Report the status and clean up the generated files
+     # Report the status and clean up the generated files
 
-#     if [ $error -eq 0 ] ; then
-# 	if [ $keep -eq 0 ] ; then
-# 	    rm -f $generatedfiles
-# 	fi
-# 	echo "OK"
-# 	echo "###### SUCCESS" 1>&2
-#     else
-# 	echo "###### FAILED" 1>&2
-# 	globalerror=$error
-#     fi
-# }
+     if [ $error -eq 0 ] ; then
+ 	if [ $keep -eq 0 ] ; then
+ 	    rm -f $generatedfiles
+ 	fi
+ 	echo "OK"
+ 	echo "###### SUCCESS" 1>&2
+     else
+ 	echo "###### FAILED" 1>&2
+ 	globalerror=$error
+     fi
+ }
 
 while getopts kdpsh c; do
     case $c in
@@ -154,7 +154,7 @@ do
 	    Check $file 2>> $globallog
 	    ;;
 	*fail-*)
-
+            CheckFail $file 2>> $globallog
 	    ;;
 	*)
 	    echo "unknown file type $file"
