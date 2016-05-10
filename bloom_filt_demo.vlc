@@ -1,0 +1,48 @@
+int BLOOM_SIZE = 32
+int KILO = 1024
+int PASSES = 50
+
+int[BLOOM_SIZE] bloom_filt_seq
+int[PASSES*KILO*2] test_vals
+
+void random_fill(int[BLOOM_SIZE] filt, int size, int max):
+    for(i = 0, i < size, i = i + 1):
+        filt[i] = random()
+
+int def hash(int in):
+    return ((in ^ (in >> 22)
+
+void def set_index(int[BLOOM_SIZE] filt, int i):
+    filt[i/32] = (1 << (i % 32)) | (filt[i/32])
+
+int def test_index(int[BLOOM_SIZE] filt, int i):
+    return ( (filt[i/32] & (1 << (i % 32))) != 0 )
+
+int def main():
+    int test_size = PASSES * KILO * 2
+    random_fill(test_vals, test_size, MAX)
+
+    int index
+    int seq_counter
+    int seq_def_not
+    int result
+
+    print("Starting sequential...")
+    for(int i = 0, i < test_size, i=i+1):
+        bool divis = i % 2
+        if(divis == true):
+            index = hash( test_vals[i] )
+            set_index(bloom_filt_seq, index)
+            seq_counter += 1
+        else:
+            index = hash( test_vals[i] )
+            result = test_index(bloom_filt_seq, index)
+
+            if( result == 0):
+                seq_def_not = seq_def_not + 1
+
+    print(seq_counter)
+    print(seq_def_not)
+
+    return 0
+
