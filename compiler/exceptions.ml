@@ -47,12 +47,13 @@ exception Invalid_accessor_value
 exception Higher_order_function_call_only_takes_defg_functions
 exception Cannot_perform_operation_on_string of string 
 exception Cannot_perform_operation_on_array of string
+exception No_Hof_Allowed
 
+exception Non_constant_constants (*unused atm*)
 exception Unexpected_return_type (*unused atm*)
 exception PTX_type_not_supported (*unused atm*)
 exception Unmatching_PTX_args (*unused atm*)
 exception Invalid_function_in_defg (*unused atm*)
-exception Non_constant_constants (*unused atm*)
 (*-------------------------------------Codegen C-------------------------------------*)
 exception Unknown_variable_type
 exception Unknown_operator
