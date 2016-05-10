@@ -1,0 +1,23 @@
+byte defg blur(byte image_i, image_j) {
+  gaussian
+  byte sum = 0
+  if(image_i > 4 && image_j < 26):
+    for(int i=0, i<5, i++):
+      for(int j=0, j<5, j++):
+        sum = sum + image[image_i-5+i][image_j-5+j]*gaussian[j][i]
+  return sum
+
+int def main():
+  byte image_is[29][29] /* i indices for image */
+  byte image_js[29][20] /* j indices for image */
+
+  byte image[29][29] /* need to find image */
+  byte gaussian[5][5] /* need to copy gaussian vals */
+
+  byte result[29][29] = ~map(blur, image_is, image js, consts(image, gaussian))
+
+  for(int i=0, i<29, i++):
+    for(int j=0, i<29, j++):
+      print(d)
+
+  return 0
