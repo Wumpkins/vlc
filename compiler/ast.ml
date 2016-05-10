@@ -27,19 +27,19 @@ type vdecl =
     Variable_Declaration of variable_type * identifier
 
 type expression =
-  | Function_Call of identifier * expression list
-  | Higher_Order_Function_Call of higher_order_function_call
-  | String_Literal of string
-  | Integer_Literal of int
-  | Boolean_Literal of bool
-  | Floating_Point_Literal of float
-  | Array_Literal of expression list
-  | Identifier_Literal of identifier 
-  | Cast of variable_type * expression
-  | Binop of expression * binary_operator * expression
-  | Unop of expression * unary_operator
-  | Array_Accessor of expression * expression list (* Array, indexes *)
-  | Ternary of expression * expression * expression
+    | Function_Call of identifier * expression list
+    | Higher_Order_Function_Call of higher_order_function_call
+    | String_Literal of string
+    | Integer_Literal of int
+    | Boolean_Literal of bool
+    | Floating_Point_Literal of float
+    | Array_Literal of expression list
+    | Identifier_Literal of identifier (* id, is_lvalue *)
+    | Cast of variable_type * expression
+    | Binop of expression * binary_operator * expression
+    | Unop of expression * unary_operator
+    | Array_Accessor of expression * expression list * bool(* array, indexes, is_lvalue *)
+    | Ternary of expression * expression * expression
 and constant = 
   | Constant of identifier * expression
 and higher_order_function_call = {

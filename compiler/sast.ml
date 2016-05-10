@@ -126,7 +126,11 @@ type ptx_fdecl = {
 	  for each ptx fdecl that our c code will need to know how to interface
 	  with to use as a return type
 	*)
+<<<<<<< HEAD
   ptx_fdecl_return_value						: ptx_kernel_variable_info;
+=======
+	ptx_fdecl_return_type						: ptx_pdecl;
+>>>>>>> 14e4fc5c376024467bda9bd85d4ed6a2c1e11c66
 
 	(* Declares the virtual registers that are needed for the function *)
   register_decls 							: ptx_vdecl list;
@@ -216,6 +220,7 @@ type c_higher_order_fdecl = {
 }
 
 type c_expression =
+<<<<<<< HEAD
   | Function_Call of Ast.identifier * c_expression list
   | String_Literal of string
   | Integer_Literal of int
@@ -233,6 +238,25 @@ type c_variable_statement =
   | Declaration of c_vdecl
   | Initialization of c_vdecl * c_expression
   | Assignment of c_expression * c_expression
+=======
+    | Function_Call of Ast.identifier * c_expression list
+    | String_Literal of string
+    | Integer_Literal of int
+    | Boolean_Literal of bool
+    | Floating_Point_Literal of float
+    | Array_Literal of c_expression list * int list
+    | Identifier_Literal of Ast.identifier (*id, is_lvalue*)
+    | Cast of c_variable_type * c_expression
+    | Binop of c_expression * c_binary_operator * c_expression
+    | Unop of c_expression * c_unary_operator
+    | Array_Accessor of c_expression * c_expression list* bool*bool(* Array, indexes, is_lvalue, array_access *)
+    | Ternary of c_expression * c_expression * c_expression (* expression if true, condition, expression if false *)
+
+type c_variable_statement = 
+    | Declaration of c_vdecl
+    | Initialization of c_vdecl * c_expression
+    | Assignment of c_expression * c_expression(* bool=true if left hand side is an array *)
+>>>>>>> 14e4fc5c376024467bda9bd85d4ed6a2c1e11c66
 
 type c_statement = 
   | Variable_Statement of c_variable_statement

@@ -22,13 +22,13 @@ let reduce_c_name_counter = ref 0
 let reduce_ptx_name_counter = ref 0
 (* For generating arg names*)
 let arg_counter = ref 0
-
+let ptx_return_counter = ref 0
 
 (* For generating register counters for datatypes *)
-let signed_int_counter = ref 0
-let signed_float_counter = ref 0
-let predicate_counter = ref 0
-let block_counter = ref 0
+let signed_int_counter = ref 1
+let signed_float_counter = ref 1
+let predicate_counter = ref 1
+let block_counter = ref 1
 (*-----------------------------------Generates Symbols Based on Counters-----------------------------------*)
 let generate_device_pointer_name () = 
   let name = "dev_ptr" ^ (string_of_int !dev_name_counter) in 
@@ -60,10 +60,20 @@ let generate_reduce_ptx_function_name () =
   name
 
 let generate_arg_name () = 
+<<<<<<< HEAD
   let name = "arg" ^ (string_of_int !arg_counter) in 
   incr arg_counter;
   name
 
+=======
+    let name = "arg" ^ (string_of_int !arg_counter) in 
+    incr arg_counter;
+    name
+let generate_ptx_return_name () = 
+    let name = "func_ret" ^ (string_of_int !ptx_return_counter) in 
+    incr arg_counter;
+    name
+>>>>>>> 14e4fc5c376024467bda9bd85d4ed6a2c1e11c66
 (*-----------------------------------Types for Semantic Analysis-----------------------------------*)
 (* Three types of functions *)
 type cuda_function_type  = 
@@ -276,6 +286,7 @@ let rec infer_type expression env=
     | Some(t) -> t
     | None -> raise Exceptions.Empty_array_expression_list in
   match expression with
+<<<<<<< HEAD
   | Ast.String_Literal(_) -> Ast.Primitive(Ast.String)
   | Ast.Integer_Literal(_) -> Ast.Primitive(Ast.Integer)
   | Ast.Floating_Point_Literal(_) -> Ast.Primitive(Ast.Float)
@@ -326,6 +337,58 @@ let rec infer_type expression env=
      in
      Ast.Array(f_info.function_return_type,length)
   | _ -> raise (Exceptions.Cannot_infer_expression_type)
+=======
+    | Ast.String_Literal(_) -> Ast.Primitive(Ast.String)
+    | Ast.Integer_Literal(_) -> Ast.Primitive(Ast.Integer)
+    | Ast.Floating_Point_Literal(_) -> Ast.Primitive(Ast.Float)
+    | Ast.Boolean_Literal(_) -> Ast.Primitive(Ast.Boolean)
+    | Ast.Array_Literal(expr_list) ->
+       let f expression = infer_type expression env in
+      Ast.Array(match_type (List.map f expr_list),(List.length expr_list))
+    | Ast.Identifier_Literal(id) -> 
+        if(check_already_declared (Utils.idtos id) env) = false then raise (Exceptions.Variable_not_found_in_scope ( Utils.idtos id)) 
+        else (get_variable_type (Utils.idtos id) env)
+    | Ast.Binop(e1,op,e2) -> 
+        (match op with 
+          | Ast.And | Ast.Or | Ast.Xor -> Ast.Primitive(Ast.Boolean)
+          | _ -> if (same_types (infer_type e1 env) (infer_type e2 env)) = true then infer_type e1 env 
+                  else (raise (Exceptions.Type_mismatch("Binop types don't match")))
+        )
+    | Ast.Cast(vtype,e) -> vtype
+    | Ast.Unop(e,unop) -> infer_type e env
+    | Ast.Array_Accessor(e1,e_list,is_lvalue) -> 
+        (* Check e1 is an array *) 
+          (match infer_type e1 env with 
+            | Ast.Array(t,n) -> ()
+            | _ -> (raise (Exceptions.Not_an_array_expression))
+          );
+        (* Check valid access *)
+        let rec get_array_type arr dim_list = 
+          match dim_list with
+            | [] -> raise Exceptions.Empty_array_access
+            | hd::[] -> 
+              (match arr with
+                | Ast.Array(t,n) -> t
+                | _ -> raise Invalid_array_expression
+              )
+            | hd::tl ->
+              ( match arr with 
+                | Ast.Array(t,n) -> get_array_type t tl
+                | _ -> raise Exceptions.Invalid_array_expression
+              )
+        in get_array_type (infer_type e1 env) e_list
+    | Ast.Ternary(e1,e2,e3) ->
+        if(same_types (infer_type e1 env) (infer_type e2 env)) = true then infer_type e1 env else (raise (Exceptions.Type_mismatch("Ternary doesn't return same type")))
+    | Ast.Higher_Order_Function_Call(hof) -> 
+      let f_info = get_function_info (Utils.idtos hof.kernel_function_name) env in
+      let vtype = infer_type (List.hd hof.input_arrays) env in
+        let length = match vtype with 
+          | Ast.Primitive(p) -> raise Exceptions.Invalid_array_expression
+          | Ast.Array(t,n) -> n
+        in
+      Ast.Array(f_info.function_return_type,length)
+    | _ -> raise (Exceptions.Cannot_infer_expression_type)
+>>>>>>> 14e4fc5c376024467bda9bd85d4ed6a2c1e11c66
 
 
 (* Check that array has only one dimension - used for certain operations *)
@@ -600,9 +663,9 @@ let rec get_input_arrays_info input_arrays var_info_list env =
      )
 
 (* Creates sast struct storing information about return array from higher order function *)
-let get_return_array_info kfunc_id env = 
+let get_return_array_info kfunc_id length env = 
   let f_info            = get_function_info kfunc_id env in
-  let return_vtype,env  = convert_to_c_variable_type f_info.function_return_type env in
+  let return_vtype,env  = convert_to_c_variable_type (Ast.Array(f_info.function_return_type,length)) env in
   let h_name            = Ast.Identifier(generate_host_pointer_name ())in
   let k_name            = Ast.Identifier(generate_device_pointer_name ())in
   let a_name            = Ast.Identifier(generate_arg_name ()) in 
@@ -616,7 +679,14 @@ let get_return_array_info kfunc_id env =
 
 (* Main function for creating the C map function (when we see a map function call) *)
 let make_hof_c_fdecl hof_call env =  
+  let arr_length = 
+              let arr = infer_type (List.hd hof_call.input_arrays) env in
+              (match arr with 
+              | Ast.Array(t,n) -> n
+              | _ -> raise Exceptions.Not_an_array_expression)
+  in
   match Utils.idtos(hof_call.hof_type) with
+<<<<<<< HEAD
   | "map" ->
      let kfunc_name = Ast.Identifier(generate_map_ptx_function_name ()) in
      {
@@ -642,6 +712,33 @@ let make_hof_c_fdecl hof_call env =
        called_functions                                                    =  [hof_call.kernel_function_name]
      }  
   | _ -> raise (Exceptions.Unknown_higher_order_function_call (Utils.idtos hof_call.hof_type))
+=======
+    | "map" ->
+          let kfunc_name = Ast.Identifier(generate_map_ptx_function_name ()) in
+         {
+            higher_order_function_type                                          =  Ast.Identifier("map");
+            higher_order_function_name                                          =  Ast.Identifier(generate_map_c_function_name ());
+            applied_kernel_function                                             =  kfunc_name;
+            higher_order_function_constants                                     =  get_constants_info hof_call.constants [] env;
+            array_length                                                        =  arr_length;
+            input_arrays_info                                                   =  get_input_arrays_info hof_call.input_arrays [] env;
+            return_array_info                                                   =  get_return_array_info (Utils.idtos(hof_call.kernel_function_name)) arr_length env;
+            called_functions                                                    =  [hof_call.kernel_function_name]
+         } 
+    | "reduce" -> 
+          let kfunc_name = Ast.Identifier(generate_reduce_ptx_function_name ()) in
+           {
+              higher_order_function_type                                          =  Ast.Identifier("reduce");
+              higher_order_function_name                                          =  Ast.Identifier(generate_reduce_c_function_name ());
+              applied_kernel_function                                             =  kfunc_name;
+              higher_order_function_constants                                     =  get_constants_info hof_call.constants [] env;
+              array_length                                                        =  arr_length;
+              input_arrays_info                                                   =  get_input_arrays_info hof_call.input_arrays [] env;
+              return_array_info                                                   =  get_return_array_info (Utils.idtos(hof_call.kernel_function_name)) arr_length env;
+              called_functions                                                    =  [hof_call.kernel_function_name]
+           }  
+    | _ -> raise (Exceptions.Unknown_higher_order_function_call (Utils.idtos hof_call.hof_type))
+>>>>>>> 14e4fc5c376024467bda9bd85d4ed6a2c1e11c66
 
 (* TO IMPLEMENT 
 Converts c_kernel_variable_info to ptx_kernel_variable_info *)
@@ -766,6 +863,7 @@ let rec convert_to_c_expression e env =
      | Ast.Not -> 
         if((infer_type e env)= Ast.Primitive(Ast.Boolean)) = false then raise (Exceptions.Type_mismatch("Must use boolean expression with boolean unop"))
         else
+<<<<<<< HEAD
           let c_e,env = convert_to_c_expression e env in 
           let c_op,env = convert_to_c_unop op env in
           Sast.Unop(c_e,c_op),env
@@ -867,11 +965,104 @@ let rec convert_to_c_expression e env =
     (* | "reduce" ->
        in Sast.FunctionCall(c_ma) *)
     | _ -> raise (Exceptions.Unknown_higher_order_function_call (Utils.idtos(hof.hof_type))))
+=======
+          (*Check e2 is boolean*)
+          if(same_types (infer_type e2 env) (Ast.Primitive(Ast.Boolean))) = false then (raise (Exceptions.Conditional_must_be_a_boolean))
+          else
+            let c_e1,env = convert_to_c_expression e1 env in 
+            let c_e2,env = convert_to_c_expression e2 env in 
+            let c_e3,env = convert_to_c_expression e3 env in 
+            Sast.Ternary(c_e1,c_e2,c_e3),env
+      | Ast.Array_Accessor(e,e_list,is_lvalue) ->
+        (* Check e is an array *)
+          (match infer_type e env with 
+            | Ast.Array(t,n) -> ()
+            | _ -> raise Exceptions.Not_an_array_expression);
+          (* Check that e_list can access a*)
+          ignore(List.map (fun x -> same_types (infer_type x env) (Ast.Primitive(Ast.Integer))) e_list);
+          (* Convert *)
+          let c_e,env = convert_to_c_expression e env  in
+          let c_e_list = List.map (fun x -> fst(convert_to_c_expression x env)) e_list in
+          let array_type = infer_type e env in
+          let array_dims = get_array_dimensions array_type [] in
+          let array_access = ((List.length array_dims) > (List.length e_list)) in
+          Sast.Array_Accessor(c_e,c_e_list,is_lvalue,array_access),env
+      | Ast.Binop(e1,op,e2) -> 
+          (* Check that expressions match *)
+          if((same_types (infer_type e1 env) (infer_type e2 env)) = false) then raise (Exceptions.Type_mismatch "Binop doesn't match")
+          else
+            (match op with 
+              | Ast.And | Ast.Or | Ast.Xor -> 
+                (* Check that type is boolean if using boolean operator *)
+                ignore(same_types (infer_type e1 env) (Ast.Primitive(Ast.Boolean)));
+                  let c_e1,env = convert_to_c_expression e1 env in
+                  let c_op,env = convert_to_c_binop op env in
+                  let c_e2,env = convert_to_c_expression e2 env in
+                  Sast.Binop(c_e1,c_op,c_e2),env
+              | _ -> 
+                (* Check if type is string, array *)
+                  (match (infer_type e1 env) with
+                    | Ast.Primitive(t) -> if t = Ast.String then raise (Exceptions.Cannot_perform_operation_on_string (Utils.binary_operator_to_string op)) else ()
+                    | Ast.Array(t,n) -> raise (Exceptions.Cannot_perform_operation_on_array (Utils.binary_operator_to_string op))
+                  );
+                  let c_e1,env = convert_to_c_expression e1 env in
+                  let c_op,env = convert_to_c_binop op env in
+                  let c_e2,env = convert_to_c_expression e2 env in
+                  Sast.Binop(c_e1,c_op,c_e2),env
+            )
+      | Ast.Higher_Order_Function_Call(hof) -> 
+       (* Check that function exists in environment *)
+        if (is_function_in_scope (Utils.idtos(hof.kernel_function_name)) env) = false then raise (Exceptions.Function_not_defined (Utils.idtos hof.kernel_function_name));
+        (* Check that arrays are valid arrays *)
+(*         let input_arrays = List.map (fun e -> infer_type e env) hof.input_arrays in 
+        let good_arrays = (List.iter same_types_list input_arrays) in *)
+        (* Check that function arguments match that of function declaration *)
+        let f_info = (get_function_info (Utils.idtos hof.kernel_function_name) env) in
+        (* if f_info.function_type != Kernel_Device then raise (Exceptions.Higher_order_function_call_only_takes_defg_functions)
+      else *)
+        let expected_arg_types = f_info.function_args in 
+        let get_array_types arr = 
+            match arr with 
+                | Ast.Array(t,n) -> t
+                | _ -> raise Exceptions.Invalid_input_argument_to_map
+        in
+        let f_arg_types = List.map get_array_types (get_types hof.input_arrays [] env) in
+        let check_args expected_arg_types f_args =
+        List.map2 same_types expected_arg_types f_args in
+        ignore(same_types (List.length f_arg_types) (List.length expected_arg_types));
+        ignore(check_args f_arg_types expected_arg_types);
+        (*Check that constants match those unknown variables in the defg*)
+        let retrive_constant_name c = 
+          match c with 
+            | Ast.Constant(id,e) -> Utils.idtos(id)
+        in
+        let hof_call_constants_names = List.map (retrive_constant_name) hof.constants in
+        let hof_constants_names = List.map (fun x -> Utils.idtos(x)) f_info.unknown_variables in 
+          let rec check_constants hof_call_c hof_fdecl_c = 
+            match hof_fdecl_c with
+            | [] -> true
+            | hd::tl -> if (List.exists (fun s -> s = hd) hof_call_c) = false then raise Exceptions.Constants_missing_in_defg
+              else check_constants hof_call_c tl 
+          in
+        ignore(check_constants hof_call_constants_names hof_constants_names);
+        (match Utils.idtos(hof.hof_type) with 
+            | "map" ->
+                (*Add the c map function to the environment*)
+                let hof_c_fdecl = make_hof_c_fdecl hof env in
+                let hof_ptx_fdecl = make_hof_ptx_fdecl hof_c_fdecl hof env in
+                let env = update_hof_lists hof_c_fdecl hof_ptx_fdecl env in
+                (* Convert *)
+                Sast.Function_Call(hof_c_fdecl.higher_order_function_name,(List.map (fun x -> fst(convert_to_c_expression x env)) (List.rev hof.input_arrays))),env
+            (* | "reduce" ->
+                in Sast.FunctionCall(c_ma) *)
+            | _ -> raise (Exceptions.Unknown_higher_order_function_call (Utils.idtos(hof.hof_type))))
+>>>>>>> 14e4fc5c376024467bda9bd85d4ed6a2c1e11c66
 
 (* TO IMPLEMENT *)
 
-let convert_to_ptx_expression e env = 
+let rec convert_to_ptx_expression e env = 
   match e with 
+<<<<<<< HEAD
   | Ast.Function_Call(id, exp) -> raise Exceptions.C'est_La_Vie
   | Ast.Higher_Order_Function_Call(hof) -> raise Exceptions.No_Hof_Allowed
   | Ast.String_Literal(s) -> raise Exceptions.NO_STRINGS_ALLOWED_IN_GDECL
@@ -889,6 +1080,25 @@ let convert_to_ptx_expression e env =
   | Ast.Unop(e, u) -> raise Exceptions.C'est_La_Vie
   | Ast.Array_Accessor(e, e_list) -> raise Exceptions.C'est_La_Vie
   | Ast.Ternary(e1, e2, e3) -> raise Exceptions.C'est_La_Vie
+=======
+    | Ast.Function_Call(id, exp) -> raise Exceptions.C'est_La_Vie
+    | Ast.Higher_Order_Function_Call(hof) -> raise Exceptions.No_Hof_Allowed
+    | Ast.String_Literal(s) -> raise Exceptions.NO_STRINGS_ALLOWED_IN_GDECL
+    | Ast.Integer_Literal(i) -> Sast.Ptx_expression_variable(Sast.Constant_int(i)), env
+    | Ast.Boolean_Literal(b) -> Sast.Ptx_expression_variable(Sast.Constant_bool(b)), env
+    | Ast.Floating_Point_Literal(f) -> Sast.Ptx_expression_variable(Sast.Constant_float(f)), env
+    | Ast.Array_Literal(e_list) -> raise Exceptions.C'est_La_Vie
+    | Ast.Identifier_Literal(i) -> Sast.Ptx_expression_variable(Sast.Ptx_Variable(i)), env
+    | Ast.Cast(v_type, e) -> raise Exceptions.C'est_La_Vie
+    | Ast.Binop(e1,o,e2) -> raise Exceptions.C'est_La_Vie        
+(* Need a way to turn one Ast datatype into multiple Sast datatypes      
+ convert_to_ptx_expression(e1) ^ 
+      convert_to_ptx_expression(e2) ^ 
+      convert_to_ptx_binop(o) *)
+    | Ast.Unop(e, u) -> raise Exceptions.C'est_La_Vie
+    | Ast.Array_Accessor(e, e_list,is_lvalue) -> raise Exceptions.C'est_La_Vie
+    | Ast.Ternary(e1, e2, e3) -> raise Exceptions.C'est_La_Vie
+>>>>>>> 14e4fc5c376024467bda9bd85d4ed6a2c1e11c66
 
 let rec get_array_el_type arr num_dim =
   match num_dim with 
@@ -929,6 +1139,7 @@ let convert_to_c_variable_statement vstmt env =
                     (* Check same types*)
           ignore(same_types (get_variable_type (Utils.idtos id) env) (infer_type e2 env));
                     (*Convert*)
+<<<<<<< HEAD
        let c_e1, env = convert_to_c_expression e1 env in 
        let c_e2, env = convert_to_c_expression e2 env in
        Sast.Assignment(c_e1,c_e2),env
@@ -939,6 +1150,18 @@ let convert_to_c_variable_statement vstmt env =
            else
                               (* Check same types*)
              let arr = get_variable_type (Utils.idtos id) env in ignore(same_types (get_array_el_type arr (List.length e_list)) (infer_type e2 env));
+=======
+                    let c_e1, env = convert_to_c_expression e1 env in 
+                    let c_e2, env = convert_to_c_expression e2 env in
+                    Sast.Assignment(c_e1,c_e2),env
+              | Ast.Array_Accessor(e,e_list,is_lvalue)->
+                    (match e with 
+                      | Ast.Identifier_Literal(id) -> 
+                          if (check_already_declared (Utils.idtos id) env )= false then raise (Exceptions.Name_not_found (Utils.idtos id))
+                          else
+                            (* Check same types*)
+                              let arr = get_variable_type (Utils.idtos id) env in ignore(same_types (get_array_el_type arr (List.length e_list)) (infer_type e2 env));
+>>>>>>> 14e4fc5c376024467bda9bd85d4ed6a2c1e11c66
                               (*Convert*)
              let c_e1, env = convert_to_c_expression e1 env in 
              let c_e2,env = convert_to_c_expression e2 env in 
@@ -1105,7 +1328,19 @@ let convert_to_c_param vdecl env  =
 
 let convert_to_ptx_param vdecl env =
   match vdecl with
+<<<<<<< HEAD
   | Ast.Variable_Declaration(vtype,id) -> raise Exceptions.C'est_La_Vie  
+=======
+    | Ast.Variable_Declaration(vtype,id) -> 
+      match vtype with
+      | Ast.Primitive(p) ->
+        {
+          ptx_parameter_data_type = fst(convert_to_ptx_data_type p env);
+          ptx_parameter_state_space = Sast.State_undefined;
+          ptx_parameter_name = id;
+        },env
+      | Ast.Array(t,n) -> raise (Exceptions.Exception("Array not a valid ptx param"))
+>>>>>>> 14e4fc5c376024467bda9bd85d4ed6a2c1e11c66
 
 (* Converts from fdecl to c_fdecl *)
 let convert_to_c_fdecl fdecl env =
@@ -1144,6 +1379,7 @@ let convert_to_c_fdecl fdecl env =
      c_fdecl, env)
 
 let convert_to_ptx_fdecl fdecl env =
+<<<<<<< HEAD
   if (is_function_in_scope (Utils.idtos fdecl.name) env) = true then (raise Exceptions.Function_already_declared)
   else
     let vdecl_to_param vdecl = 
@@ -1189,6 +1425,53 @@ let convert_to_ptx_fdecl fdecl env =
      (* Pop the variable scope for the function *)
      let env = pop_scope env in
      ptx_fdecl, env) 
+=======
+    if (is_function_in_scope (Utils.idtos fdecl.name) env) = true then (raise Exceptions.Function_already_declared)
+    else
+      let vdecl_to_param vdecl = 
+        match vdecl with 
+          | Ast.Variable_Declaration(vtype,id) -> vtype
+      in
+      (* Add to function map*)
+      (let host_func_info = {
+          function_type = Kernel_Global;
+          function_name = fdecl.name;
+          function_return_type = fdecl.return_type;
+          function_args = List.map vdecl_to_param fdecl.params;
+          dependent_functions = [];
+          unknown_variables = [];
+      } 
+      in
+      let env = update_host_fmap host_func_info env in
+      (* Push new scope for function *)
+      let env = push_scope env in
+      (* Do conversion while passing enviroment *)
+      (*create a ptx_kernel_variable_info obj*)
+      let return_type, env = convert_to_ptx_variable_type fdecl.return_type env in
+      let return_info,  env    = {
+        ptx_variable_type = return_type;
+        ptx_kernel_name = fdecl.name;
+      }, env in
+      let params,       env    = convert_list convert_to_ptx_param         fdecl.params  [] env in
+      let body,         env    = convert_list convert_to_ptx_statement     fdecl.body    [] env in
+      let registers,    env    =  [
+        Ptx_Vdecl(Register_state, Sast.Ptx_Primitive(S32), Parameterized_variable_register(Ast.Identifier("si"), !signed_int_counter));
+        Ptx_Vdecl(Register_state, Sast.Ptx_Primitive(F32), Parameterized_variable_register(Ast.Identifier("fl"), !signed_float_counter));
+        Ptx_Vdecl(Register_state, Sast.Ptx_Primitive(Pred), Parameterized_variable_register(Ast.Identifier("pr"), !predicate_counter));
+      ],  env in
+      let ptx_fdecl = {
+        ptx_fdecl_type = Sast.Device_func;
+        ptx_fdecl_name = fdecl.name;
+        ptx_fdecl_params = params;
+        ptx_fdecl_return_type = fst(convert_to_ptx_param (Ast.Variable_Declaration (fdecl.return_type, (Ast.Identifier (generate_ptx_return_name()) ) )) env);
+        register_decls = registers;
+        ptx_fdecl_body = body;
+      }
+      in
+      (* Pop the variable scope for the function *)
+      let env = pop_scope env in
+      ptx_fdecl, env) 
+>>>>>>> 14e4fc5c376024467bda9bd85d4ed6a2c1e11c66
 
 (* Converts a list of function declarations to ptx and c functions *)
 let rec convert_fdecl_list fdecl_list ptx_fdecl_list c_fdecl_list env = 

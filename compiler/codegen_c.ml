@@ -97,46 +97,45 @@ let generate_mem_alloc_statement_host_to_device ktype=
     | Sast.Array(t,n) -> n
     | _ -> 1
   in
-  sprintf "checkCudaErrors(cuMemAlloc(&" ^ Utils.idtos(ktype.kernel_name) ^ ", sizeof(" ^ (generate_variable_type ktype.variable_type) ^ ")*" ^ string_of_int arr_length ^ "));"
+  sprintf "checkCudaErrors(cuMemAlloc(&" ^ Utils.idtos(ktype.kernel_name) ^ ", sizeof(" ^ (generate_pure_data_type ktype.variable_type) ^ ")*" ^ string_of_int arr_length ^ "));"
 
-let generate_mem_alloc_host_to_device fcall = 
-   (* let rec create_list mylist length element = if length > 0 then
-      create_list (element::mylist) (length-1) element else mylist in *)
-  let mem_alloc_string =
+ let generate_mem_alloc_host_to_device fcall = 
+    (* let rec create_list mylist length element = if length > 0 then create_list (element::mylist) (length-1) element else mylist in
+     *)let mem_alloc_string = 
     String.concat "\n" (List.map generate_mem_alloc_statement_host_to_device fcall.input_arrays_info) in
   sprintf "%s" mem_alloc_string
 
 (* Generates CUDA copying from host to device*)
-let generate_mem_cpy_statement_host_to_device ktype= 
-  let mem_cpy_string = 
-    match ktype.variable_type with 
-    | Array(t,n) -> 
-       let arr_length = 
-         (match ktype.variable_type with 
-         | Sast.Array(t,n) -> n
-         | _ -> 0
-         )
-       in
-       "checkCudaErrors(cuMemcpyHtoD("^ Utils.idtos(ktype.kernel_name) ^", " ^ Utils.idtos(ktype.host_name) ^ ", sizeof(" ^ (generate_variable_type ktype.variable_type) ^ ")*" ^ string_of_int arr_length ^ "));\n"
-    | Primitive(t) -> 
-       "checkCudaErrors(cuMemcpyHtoD("^ Utils.idtos(ktype.kernel_name) ^", " ^ "&" ^ Utils.idtos(ktype.host_name) ^ ", sizeof(" ^ (generate_variable_type ktype.variable_type) ^ ")*1" ^ "));\n"
-  in sprintf "%s" mem_cpy_string
+ let generate_mem_cpy_statement_host_to_device ktype= 
+   let mem_cpy_string = 
+     match ktype.variable_type with 
+     | Array(t,n) -> 
+        let arr_length = 
+          (match ktype.variable_type with 
+          | Sast.Array(t,n) -> n
+          | _ -> 0
+          )
+        in
+        "checkCudaErrors(cuMemcpyHtoD("^ Utils.idtos(ktype.kernel_name) ^", " ^ Utils.idtos(ktype.host_name) ^ ", sizeof(" ^ (generate_pure_data_type ktype.variable_type) ^ ")*" ^ string_of_int arr_length ^ "));\n"
+     | Primitive(t) -> 
+        "checkCudaErrors(cuMemcpyHtoD("^ Utils.idtos(ktype.kernel_name) ^", " ^ "&" ^ Utils.idtos(ktype.host_name) ^ ", sizeof(" ^ (generate_variable_type ktype.variable_type) ^ ")*1" ^ "));\n"
+   in sprintf "%s" mem_cpy_string
 
-let generate_mem_cpy_host_to_device fcall = 
-  (* let rec create_list mylist length element = if length > 0 then create_list (element::mylist) (length-1) element else mylist in *)
-  let mem_cpy_string = String.concat "\n" (List.map generate_mem_cpy_statement_host_to_device fcall.input_arrays_info ) in
-  sprintf "%s" mem_cpy_string
+ let generate_mem_cpy_host_to_device fcall = 
+    (* let rec create_list mylist length element = if length > 0 then create_list (element::mylist) (length-1) element else mylist in
+     *)let mem_cpy_string = String.concat "\n" (List.map generate_mem_cpy_statement_host_to_device fcall.input_arrays_info ) in
+    sprintf "%s" mem_cpy_string
 
 (* Generates CUDA statement for kernel params *)
-let generate_kernel_params arr_info = 
-  let rec get_kernel_names a_info_list name_list = 
-    match a_info_list with 
-    | [] -> name_list 
-    | hd::tl -> get_kernel_names tl (List.rev (hd.kernel_name::(List.rev name_list) ))
-  in
-  let kernel_names = (get_kernel_names arr_info []) in 
-  let kernel_param_string = generate_list generate_id ", &" kernel_names in 
-  sprintf "void *KernelParams[] = { &" ^ kernel_param_string ^ "};"
+ let generate_kernel_params arr_info = 
+   let rec get_kernel_names a_info_list name_list = 
+     match a_info_list with 
+     | [] -> name_list 
+     | hd::tl -> get_kernel_names tl (List.rev (hd.kernel_name::(List.rev name_list) ))
+   in
+   let kernel_names = (get_kernel_names arr_info []) in 
+   let kernel_param_string = generate_list generate_id ", &" kernel_names in 
+   sprintf "void *KernelParams[] = { &" ^ kernel_param_string ^ "};"
 
 (* Generate CUDA memory cleanup *)
 let generate_mem_cleanup arr_info = 
@@ -176,11 +175,9 @@ let rec generate_expression expression  =
     | Sast.Floating_Point_Literal(f) ->
        string_of_float f
     | Sast.Array_Literal(e_list,int_list) -> 
-       print_endline "intlist";
-      List.map print_int int_list;
-      "VLC_Array(" ^ string_of_int (List.length e_list) ^ "," ^ string_of_int (List.length int_list) ^"," ^
-        (generate_list string_of_int "," int_list) ^ "," ^ 
-        (generate_list generate_expression "," e_list) ^ ")" 
+       "VLC_Array(" ^ string_of_int (List.length e_list) ^ "," ^ string_of_int (List.length int_list) ^"," ^
+         (generate_list string_of_int "," int_list) ^ "," ^ 
+         (generate_list generate_expression "," e_list) ^ ")" 
     | Sast.Identifier_Literal(id) -> 
        (generate_id id)
     | Sast.Cast(vtype,e) ->
@@ -191,7 +188,13 @@ let rec generate_expression expression  =
        (match o with 
        | Sast.Not | Sast.Negate  -> (generate_unary_operator o) ^ (generate_expression e)
        | Sast.Plus_Plus | Sast.Minus_Minus -> (generate_expression e) ^ (generate_unary_operator o))
-    | Sast.Array_Accessor(e,e_list) -> (generate_expression e) ^ "[" ^ (generate_list generate_expression "][" e_list) ^ "]"
+    | Sast.Array_Accessor(e,e_list,is_lvalue,access_array) -> 
+       if is_lvalue = false then
+         if access_array = true then
+           (generate_expression e) ^ ".get_array_value_host(" ^ string_of_int (List.length e_list) ^ "," ^ generate_list generate_expression "," e_list ^ ")"
+         else
+           (generate_expression e) ^ ".get_element_value(" ^ string_of_int (List.length e_list) ^ "," ^ generate_list generate_expression "," e_list ^ ")"
+       else (generate_expression e)
     | Sast.Ternary(e1,e2,e3) -> "(" ^ (generate_expression e2) ^ ") ? " ^ (generate_expression e1) ^ ":" ^ (generate_expression e3)
   in sprintf "%s" expr
 (* Generates CUDA statements that copy constants from host to gpu *)
@@ -213,7 +216,7 @@ let generate_args ktype =
 
 let generate_host_ptr ktype = 
   match ktype.variable_type with
-  | Sast.Array(t,n) -> (generate_variable_type ktype.variable_type) ^ "* " ^ Utils.idtos ktype.host_name ^ ";"
+  | Sast.Array(t,n) -> (generate_pure_data_type ktype.variable_type) ^ "* " ^ Utils.idtos ktype.host_name ^ ";"
   | Sast.Primitive(p) -> (generate_variable_type ktype.variable_type) ^ " " ^ Utils.idtos ktype.host_name ^ ";"
 
 (* (* Generates if statement for every constant. Necessary because constants maybe different types *)
@@ -248,90 +251,127 @@ let generate_function_string_assignment id =
 let generate_function_string_read id = 
   "std::string " ^ Utils.idtos id ^ "_str" ^ "((std::istreambuf_iterator<char>(" ^ Utils.idtos id ^ ")), std::istreambuf_iterator<char>());"
 
-let generate_if_statements constant_list index = 
+let rec generate_if_statements_constants constant_list str index = 
   match constant_list with 
-  | [] -> ""
-  | hd::[] -> 
-     if index = 0 then
-       "if(i ==" ^ string_of_int index ^ "){\n" ^ 
-         "\t" ^ Utils.idtos hd.host_name  ^ " = va_args(constants," ^ generate_variable_type hd.variable_type ^ ");\n" ^ 
-         "\t" ^ generate_mem_alloc_statement_host_to_device hd ^ "\n" ^
-         "\t" ^ generate_mem_cpy_statement_host_to_device hd ^ "\n" ^ 
-         "}\n"
-     else
-       "else{\n" ^ 
-         "\t" ^ Utils.idtos hd.host_name ^ " = va_args(constants," ^ generate_variable_type hd.variable_type ^ ");\n" ^ 
-         "\t" ^ generate_mem_alloc_statement_host_to_device hd ^ "\n" ^
-         "\t" ^ generate_mem_cpy_statement_host_to_device hd ^ "\n" ^ 
-         "}\n"
-  | hd::tl ->
-     if index = 0 then
-       "if(i ==" ^ string_of_int index ^ "){\n" ^ 
-         "\t" ^ Utils.idtos hd.host_name  ^ " = va_args(constants," ^ generate_variable_type hd.variable_type ^ ");\n" ^ 
-         "\t" ^ generate_mem_alloc_statement_host_to_device hd ^ "\n" ^
-         "\t" ^ generate_mem_cpy_statement_host_to_device hd ^ "\n" ^ 
-         "}\n"
-     else
-       "else if(i ==" ^ string_of_int index ^ "){\n" ^ 
-         "\t" ^ Utils.idtos hd.host_name  ^ " = va_args(constants," ^ generate_variable_type hd.variable_type ^ ");\n" ^ 
-         "\t" ^ generate_mem_alloc_statement_host_to_device hd ^ "\n" ^
-         "\t" ^ generate_mem_cpy_statement_host_to_device hd ^ "\n" ^ 
-         "}\n"
+    | [] -> ""
+    | hd::[] -> 
+      let statement_string = 
+        if index = 0 then
+          "if(i ==" ^ string_of_int index ^ "){\n" ^ 
+            "\t" ^ Utils.idtos hd.host_name  ^ " = va_args(constants," ^ generate_variable_type hd.variable_type ^ ");\n" ^ 
+            "\t" ^ generate_mem_alloc_statement_host_to_device hd ^ "\n" ^
+            "\t" ^ generate_mem_cpy_statement_host_to_device hd ^ "\n" ^ 
+          "}\n"
+        else
+          "else{\n" ^ 
+            "\t" ^ Utils.idtos hd.host_name ^ " = va_args(constants," ^ generate_variable_type hd.variable_type ^ ");\n" ^ 
+            "\t" ^ generate_mem_alloc_statement_host_to_device hd ^ "\n" ^
+            "\t" ^ generate_mem_cpy_statement_host_to_device hd ^ "\n" ^ 
+          "}\n"
+      in str ^ statement_string
+    | hd::tl ->
+      let statement_string = 
+        if index = 0 then
+          "if(i ==" ^ string_of_int index ^ "){\n" ^ 
+            "\t" ^ Utils.idtos hd.host_name  ^ " = va_args(constants," ^ generate_variable_type hd.variable_type ^ ");\n" ^ 
+            "\t" ^ generate_mem_alloc_statement_host_to_device hd ^ "\n" ^
+            "\t" ^ generate_mem_cpy_statement_host_to_device hd ^ "\n" ^ 
+          "}\n"
+        else
+          "else if(i ==" ^ string_of_int index ^ "){\n" ^ 
+            "\t" ^ Utils.idtos hd.host_name  ^ " = va_args(constants," ^ generate_variable_type hd.variable_type ^ ");\n" ^ 
+            "\t" ^ generate_mem_alloc_statement_host_to_device hd ^ "\n" ^
+            "\t" ^ generate_mem_cpy_statement_host_to_device hd ^ "\n" ^ 
+          "}\n"
+      in generate_if_statements_constants tl (str ^ statement_string) (index+1)
+
+let rec generate_if_statements_input_arrays input_arrays str index = 
+    match input_arrays with
+    | [] -> ""
+    | hd::[] ->
+    let statement_string = 
+      if index = 0 then
+        "if(i ==" ^ string_of_int index ^ "){\n" ^ 
+          "\t"^ generate_variable_type hd.variable_type ^ " tmp = va_args(constants," ^ generate_variable_type hd.variable_type ^ ");\n" ^
+          "\t" ^ Utils.idtos hd.host_name  ^ " = tmp.get_values();\n" ^ 
+        "}\n"
+        else
+        "else{\n" ^ 
+          "\t" ^ generate_variable_type hd.variable_type ^ " tmp = va_args(constants," ^ generate_variable_type hd.variable_type ^ ");\n" ^
+          "\t" ^ Utils.idtos hd.host_name  ^ " = tmp.get_values();\n" ^ 
+        "}\n"
+      in str ^ statement_string
+    | hd::tl ->
+    let statement_string = 
+      if index = 0 then
+        "if(i ==" ^ string_of_int index ^ "){\n" ^ 
+         "\t" ^ generate_variable_type hd.variable_type ^ " tmp = va_args(constants," ^ generate_variable_type hd.variable_type ^ ");\n" ^
+          "\t" ^ Utils.idtos hd.host_name  ^ " = tmp.get_values();\n" ^ 
+        "}\n"
+      else
+        "else if(i ==" ^ string_of_int index ^ "){\n" ^ 
+          "\t" ^ generate_variable_type hd.variable_type ^ " tmp = va_args(constants," ^ generate_variable_type hd.variable_type ^ ");\n" ^
+          "\t" ^ Utils.idtos hd.host_name  ^ " = tmp.get_values();\n" ^ 
+        "}\n"
+    in generate_if_statements_input_arrays tl (str ^ statement_string) (index+1)
 
 (* Generates c function declaration for map  *)
 let generate_higher_order_function_decl hof = 
   let higher_order_function_decl_string = 
     match Utils.idtos(hof.higher_order_function_type) with
-    | "map" -> "VLC_Array <" ^ (generate_variable_type hof.return_array_info.variable_type) ^ ">" ^ 
+    | "map" ->  (generate_variable_type hof.return_array_info.variable_type) ^ 
        Utils.idtos hof.higher_order_function_name ^ "(...)" ^ "{\n\n" ^ 
        "checkCudaErrors(cuCtxCreate(&context, 0, device));\n\n" ^ 
-       (* Generates strings for all the functions that
-	  are called*)
+                      (* Generates strings for all the functions that are called*)
        generate_list generate_function_string_assignment "\n" hof.called_functions ^ "\n" ^ 
        generate_function_string_assignment hof.applied_kernel_function ^ "\n\n" ^  
 
-       (* Generates statements that read the string in from the file*)
+                      (* Generates statements that read the string in from the file*)
        generate_list generate_function_string_read "\n" hof.called_functions ^ "\n" ^ 
        generate_function_string_read hof.applied_kernel_function ^ "\n\n" ^ 
-       (* Concatenates them all in one string *)
+                      (* Concatenates them all in one string *)
        (Utils.idtos hof.applied_kernel_function) ^ "_str" ^ " = " ^ generate_list (fun x-> (Utils.idtos x) ^ "_str") " +\"\\n\" + " (List.rev(hof.applied_kernel_function::List.rev(hof.called_functions))) ^ "\n\n" ^ 
        
        "checkCudaErrors(cuModuleLoadDataEx(&cudaModule," ^ (Utils.idtos hof.applied_kernel_function) ^ "_str" ^ ", 0, 0, 0));\n" ^ 
        "checkCudaErrors(cuModuleGetFunction(&function, cudaModule, \"" ^ (Utils.idtos hof.applied_kernel_function) ^ "\"));\n\n" ^ 
        "size_t num_constants = " ^ string_of_int (List.length hof.higher_order_function_constants) ^ ";\n" ^
-       "size_t num_input_arrays = " ^ string_of_int (hof.array_length) ^ ";\n\n" ^ 
-       (* Generates host pointers we are assigning to *)
+       "size_t num_input_arrays = " ^ string_of_int (List.length hof.input_arrays_info) ^ ";\n\n" ^ 
+                      (* Generates host pointers we are assigning to *)
        generate_list generate_host_ptr "\n" hof.higher_order_function_constants ^ "\n" ^ 
        generate_list generate_host_ptr "\n" hof.input_arrays_info ^ "\n" ^
        generate_host_ptr hof.return_array_info ^ "\n\n" ^ 
-       (* Generates device pointers we are assigning to *)
+                      (* Generates device pointers we are assigning to *)
        generate_list generate_device_ptr "\n" hof.higher_order_function_constants ^ "\n" ^  
        generate_list generate_device_ptr "\n" hof.input_arrays_info ^ "\n" ^ 
        generate_device_ptr hof.return_array_info ^ "\n\n" ^ 
-       (* Performs constant copying *)
+                      (* Performs constant copying *)
        "va_list constants;\n" ^ 
-       "va_start(constants,num_constants)\n" ^ 
+       "va_start(constants,num_constants);\n" ^ 
        "for(int i = 0; i < num_constants; i++){\n\n" ^
-       generate_if_statements hof.higher_order_function_constants 0 ^ "\n" ^ 
+       generate_if_statements_constants hof.higher_order_function_constants "" 0 ^ "\n" ^ 
        "}\n" ^ 
-       "va_end(constants)\n\n" ^ 
-       (* Performs mem alloc and mem copy for input arrays*)
+       "va_end(constants);\n\n" ^ 
+                      (* Matches arguments with host pointers*)
+       "for(int i =0;i < num_input_arrays; i++){\n\n" ^ 
+       generate_if_statements_input_arrays hof.input_arrays_info "" 0 ^ "\n" ^ 
+       "}\n" ^ 
+                      (* Performs mem alloc and mem copy for input arrays*)
        generate_list generate_mem_alloc_statement_host_to_device "\n" hof.input_arrays_info ^ "\n" ^ 
        generate_list generate_mem_cpy_statement_host_to_device "" hof.input_arrays_info ^ "\n\n\n" ^ 
-       (* Performs mem alloc and mem copy for result array*)
+                      (* Performs mem alloc and mem copy for result array*)
        generate_mem_alloc_statement_host_to_device hof.return_array_info ^ "\n" ^ 
        generate_mem_cpy_statement_host_to_device hof.return_array_info ^ "\n\n" ^ 
-       (* " va_list constants;\n" 
-	  " va_start(constants,num_constants)\n" ^
-	  "for(int i = 0; i < num_constants; i++){\n" ^ 
-          (generate_if_statements_for_constants hofcall.constants (List.length hofcall.constants)) ^
-	  "}\n" ^ 
-	  " va_end(constants);\n" ^
-	  "for(int j = 0; j < num_input_arrays; j++){\n" ^
-          generate_list generate_mem_alloc_host_to_device hofcall ^ 
-          generate_list generate_mem_cpy_host_to_device hofcall ^
-	  "}\n" ^  *)
-       (* Sets Kernel params and other information needed to call cuLaunchKernel *)
+                      (* " va_list constants;\n" 
+			 " va_start(constants,num_constants)\n" ^
+			 "for(int i = 0; i < num_constants; i++){\n" ^ 
+                         (generate_if_statements_for_constants hofcall.constants (List.length hofcall.constants)) ^
+			 "}\n" ^ 
+			 " va_end(constants);\n" ^
+			 "for(int j = 0; j < num_input_arrays; j++){\n" ^
+                         generate_list generate_mem_alloc_host_to_device hofcall ^ 
+                         generate_list generate_mem_cpy_host_to_device hofcall ^
+			 "}\n" ^  *)
+                      (* Sets Kernel params and other information needed to call cuLaunchKernel *)
        generate_kernel_params (List.rev (hof.return_array_info::(List.rev hof.input_arrays_info))) ^ "\n\n" ^
        "unsigned int blockSizeX = 16;\n" ^ 
        "unsigned int blockSizeY = 1;\n" ^
@@ -339,11 +379,11 @@ let generate_higher_order_function_decl hof =
        "unsigned int gridSizeX = 1;\n" ^
        "unsigned int gridSizeY = 1;\n" ^
        "unsigned int gridSizeZ = 1;\n\n" ^
-       (* Launches kernel *)
+                      (* Launches kernel *)
        "checkCudaErrors(cuLaunchKernel(function, gridSizeX, gridSizeY, gridSizeZ, blockSizeX, blockSizeY, blockSizeZ,0, NULL, KernelParams, NULL));\n\n" ^
-       (* Copies result array back to host *)
+                      (* Copies result array back to host *)
        "checkCudaErrors(cuMemcpyDtoH(" ^ Utils.idtos((hof.return_array_info).host_name) ^ "," ^ Utils.idtos ((hof.return_array_info).kernel_name) ^ ", sizeof(" ^ generate_variable_type ((hof.return_array_info).variable_type) ^ ")*" ^ string_of_int hof.array_length ^ "));\n\n" ^ 
-       (* Cleanup *)
+                      (* Cleanup *)
        generate_list generate_mem_cleanup "\n" hof.input_arrays_info ^ "\n" ^ 
        generate_mem_cleanup hof.return_array_info ^ "\n" ^ 
        generate_list generate_mem_cleanup "\n" hof.higher_order_function_constants ^ "\n\n" ^
@@ -360,7 +400,11 @@ let generate_variable_statement vstatement =
     | Sast.Declaration(d)  -> 
        (generate_vdecl d) ^ ";\n"
     | Sast.Assignment (e1, e2) -> 
-       (generate_expression e1) ^ "=" ^ (generate_expression e2) ^ ";\n"
+       (match e1 with
+       | Sast.Array_Accessor(e,e_list,array_access,is_lvalue) ->
+          if array_access = true then (generate_expression e1) ^ ".set_array_value(" ^ (generate_expression e2) ^ "," ^ string_of_int (List.length e_list) ^ ","^(generate_list generate_expression "," e_list )^");\n"
+          else (generate_expression e1) ^ ".set_element_value(" ^ (generate_expression e2) ^ "," ^ string_of_int (List.length e_list)^ ");\n"
+       | _ -> (generate_expression e1) ^ "=" ^ (generate_expression e2) ^ ";\n")
     | Sast.Initialization(d,e) ->
        (generate_vdecl d) ^ "=" ^ (generate_expression e) ^ ";\n"
   (*     | _ -> raise Exceptions.Unknown_variable_statement *)
@@ -399,7 +443,7 @@ let generate_fdecl f  =
     (generate_variable_type f.c_fdecl_return_type) ^ " " ^ 
       (generate_id f.c_fdecl_name) ^ "(" ^ 
       (generate_list generate_param "," f.c_fdecl_params) ^ "){\n" ^ 
-      (generate_list generate_statement "\n" f.c_fdecl_body) ^ "}\n" 
+      (generate_list generate_statement "" f.c_fdecl_body) ^ "}\n\n\n" 
   in
   sprintf "%s" fdecl_string
 
@@ -413,7 +457,7 @@ let generate_cuda_file filename program =
   let cuda_program_body = 
     (generate_list generate_variable_statement "" (Utils.quint_fst(program))) ^ 
       (generate_list generate_higher_order_function_decl "" (Utils.quint_four(program))) ^
-      (generate_list generate_fdecl "" (Utils.quint_five(program))) 
+      (generate_list generate_fdecl "\n\n" (Utils.quint_five(program))) 
   in 
   let cuda_program_string = sprintf "\n\
   #include <stdio.h>\n\
