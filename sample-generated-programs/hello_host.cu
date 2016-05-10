@@ -1,10 +1,20 @@
+
 #include <stdio.h>
+#include <stdlib.h>
+#include "cuda.h"
+#include <iostream>
+#include <vlc>
+#include <stdargs.h>
+CUdevice    device;
+CUmodule    cudaModule;
+CUcontext   context;
+CUfunction  function;
+char * helloworld;
+int vlc(){
+helloworld="Hello world!";
 
-/* Hello World Program for VLC */
-char *helloworld = "Hello world!";
+printf(helloworld);
 
-int main(){
-	printf("%s\n", helloworld);
-	return 0;
+return 0;
 }
-	
+int main(void) { return vlc(); }

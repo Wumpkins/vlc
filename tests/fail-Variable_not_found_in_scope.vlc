@@ -1,3 +1,6 @@
 int def main():
-  a = 5
-  return 1
+  int i
+  for (i=0, i<5, i++):
+    int j = j + i
+  
+  return j

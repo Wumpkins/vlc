@@ -1,1 +1,1 @@
-Fatal error: exception Invalid_argument("index out of bounds")
+Fatal error: exception Exceptions.Unmatching_PTX_args

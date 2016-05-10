@@ -1,1 +1,1 @@
-Fatal error: exception Type_mismatch
+Fatal error: exception Failure("int_of_string")

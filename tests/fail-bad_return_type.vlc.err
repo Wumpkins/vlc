@@ -1,1 +1,1 @@
-Fatal error: exception Unexpected_return_type
+Fatal error: exception Failure("int_of_string")

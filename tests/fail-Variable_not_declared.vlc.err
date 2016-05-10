@@ -1,1 +1,1 @@
-Fatal error: exception Name_not_found
+Fatal error: exception Exceptions.Name_not_found("b")

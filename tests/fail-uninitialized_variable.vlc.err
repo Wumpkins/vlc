@@ -1,1 +1,1 @@
-Fatal error: exception Variable_not_declared
+Fatal error: exception Exceptions.Name_not_found("helloworld")

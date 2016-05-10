@@ -1,2 +1,2 @@
-Fatal error: exception Cannot_perform_operation_on_string
+Fatal error: exception Failure("int_of_string")
 

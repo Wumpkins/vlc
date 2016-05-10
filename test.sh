@@ -14,9 +14,12 @@ globallog=./tests/test.log
 rm -f $globallog
 error=0
 globalerror=0
-
+NC='\033[0m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
 keep=0
-
+pass=0
+fail=0
 Usage() {
     echo "Usage: test.sh [options] [.mc files]"
     echo "-k    Keep intermediate files"
@@ -68,13 +71,13 @@ Check() {
     error=0
     basename=`echo $1 | sed 's/.*\\///
                              s/.vlc//'`
-    reffile=`echo $1 | sed 's/.vlc$//'`
+     reffile=`echo $1 | sed 's/.vlc$//'`
     basedir="`echo $1 | sed 's/\/[^\/]*$//'`/."
 
     echo -n "$basename..."
 
     echo 1>&2
-    echo "###### Testing $basename" 1>&2
+    echo "###### Testing $basename " 1>&2
 
     generatedfiles=""
 
@@ -89,41 +92,45 @@ Check() {
 	fi
 	echo "OK"
 	echo "###### SUCCESS" 1>&2
+	((pass++))
     else
 	echo "###### FAILED" 1>&2
 	globalerror=$error
+	((fail++))
     fi
+    echo -n "$basename 2"
+
 }
 
 CheckFail() {
      error=0
      basename=`echo $1 | sed 's/.*\\///
-                              s/.mc//'`
-     reffile=`echo $1 | sed 's/.vlc$//'`
-     basedir="`echo $1 | sed 's/\/[^\/]*$//'`/."
+                              s/.vlc//'`
 
      echo -n "$basename..."
 
      echo 1>&2
-     echo "###### Testing $basename" 1>&2
+     echo "###### Testing $basename " 1>&2
 
      generatedfiles=""
 
-     generatedfiles="$generatedfiles ./tests/${basename}.err ./tests/${basename}.diff" &&
-     RunFail "$VLC" "<" $1 "2>" "./tests/${basename}.err" ">>" $globallog &&
-     Compare ${basename}.err ./tests/${reffile}.err ./tests/${basename}.diff
+     generatedfiles="$generatedfiles ./${basename}.out ./${basename}.diff" &&
+     RunFail "$VLC" $1 "2>" "${basename}.out" ">>" $globallog &&
+     Compare "tests/$basename.vlc.err" "./${basename}.out" "./${basename}.diff"
 
      # Report the status and clean up the generated files
 
      if [ $error -eq 0 ] ; then
  	if [ $keep -eq 0 ] ; then
- 	    rm -f $generatedfiles
+	    rm -f $generatedfiles
  	fi
  	echo "OK"
  	echo "###### SUCCESS" 1>&2
+	((pass++))
      else
  	echo "###### FAILED" 1>&2
  	globalerror=$error
+	((fail++))
      fi
  }
 
@@ -162,5 +169,7 @@ do
 	    ;;
     esac
 done
-
+echo ""
+echo -e "Tests Passed: $pass"
+echo -e "Tests Failed: $fail"
 exit $globalerror
