@@ -16,78 +16,80 @@ let sign = ['+' '-']
 let exp = ['e' 'E']
 let newline = '\n' | "\r\n"
 
-    rule token = parse
-    | whitespace* "//"       	{ single_line_comment lexbuf }
-    | whitespace* "/*"       	{ multi_line_comment lexbuf }
-    | newline 			{ indent lexbuf }
-    | whitespace 		{ token lexbuf }
+rule token = parse
+    | whitespace* "//"         			{ single_line_comment lexbuf }
+  	| whitespace* "/*"         			{ multi_line_comment lexbuf }
+	| newline 							{ indent lexbuf }
+	| whitespace 						{ token lexbuf }
 
-    (* Punctuation *)
-    | '(' 		        { LPAREN }
-    | ')' 		        { RPAREN }
-    | ':' 		        { COLON }
-    | '=' 		        { ASSIGNMENT }
-    | '[' 		        { LBRACKET }
-    | ']' 		        { RBRACKET }
-    | '{' 		        { LCURLY }
-    | '}' 		        { RCURLY }
-    | ',' 		        { COMMA }	
+	(* Punctuation *)
+	| '(' 		{ LPAREN }
+	| ')' 		{ RPAREN }
+	| ':' 		{ COLON }
+	| '=' 		{ ASSIGNMENT }
+	| '[' 		{ LBRACKET }
+	| ']' 		{ RBRACKET }
+	| '{' 		{ LCURLY }
+	| '}' 		{ RCURLY }
+	| ',' 		{ COMMA }	
 
-    (* Arithmetic Operators *)
-    | '+' 		        { ADD }
-    | '-' 		        { SUBTRACT }
-    | '*' 	        	{ MULTIPLY }
-    | '/' 	        	{ DIVIDE }
-    | '%' 	        	{ MODULO }
-    | ">>" 	         	{ BITSHIFT_RIGHT }
-    | "<<"	        	{ BITSHIFT_LEFT }
-    | "++"	        	{ PLUS_PLUS }
-    | "--"	        	{ MINUS_MINUS }
+	(* Arithmetic Operators *)
+	| '+' 		{ ADD }
+	| '-' 		{ SUBTRACT }
+	| '*' 		{ MULTIPLY }
+	| '/' 		{ DIVIDE }
+	| '%' 		{ MODULO }
+	| ">>" 		{ BITSHIFT_RIGHT }
+	| "<<"		{ BITSHIFT_LEFT }
+	| "++"		{ PLUS_PLUS }
+	| "--"		{ MINUS_MINUS }
+	| "&"		{ BITWISE_AND}
+	| "|" 		{ BITWISE_OR}
 
-    (* Logic Operators *)
-    | "and"  	                { AND }
-    | "or"	 	        { OR }
-    | "not"                     { NOT }
-    | "xor" 	                { XOR }
+	(* Logic Operators *)
+	| "and"  	{ AND }
+	| "or"	 	{ OR }
+	| "not" 	{ NOT }
+	| "xor"	 	{ XOR }
 
-    (* Comparison Operators *)
-    | "==" 		        { EQUAL }
-    | "!="		        { NOT_EQUAL }
-    | ">"		        { GREATER_THAN }
-    | ">="		        { GREATER_THAN_EQUAL }
-    | "<"		        { LESS_THAN }
-    | "<=" 		        { LESS_THAN_EQUAL}
+	(* Comparison Operators *)
+	| "==" 		{ EQUAL }
+	| "!="		{ NOT_EQUAL }
+	| ">"		{ GREATER_THAN }
+	| ">="		{ GREATER_THAN_EQUAL }
+	| "<"		{ LESS_THAN }
+	| "<=" 		{ LESS_THAN_EQUAL}
 
-    (* Datatypes *)
-    | ("string" 
-	  | "bool" 	| "void" 
-	  | "ubyte" 	| "byte" 
-	  | "uint"	| "int" 
-	  | "ulong" 	| "long"
-	  | "float"	| "double") as input { DATATYPE(input) }
+	(* Datatypes *)
+	| ("string" 
+		| "bool" 	| "void" 
+		| "ubyte" 	| "byte" 
+		| "uint"	| "int" 
+		| "ulong" 	| "long"
+		| "float"	| "double") as input { DATATYPE(input) }
 
-    (* Conditionals and Loops *)
-    (* 	| "elif" 		{ ELSEIF }*)
-    | "if" 			{ IF }
-    | "else"   		        { ELSE }
-    | "for" 		        { FOR }
-    | "while"		        { WHILE }
-    | "break"		        { BREAK }
-    | "continue"	        { CONTINUE }
+	(* Conditionals and Loops *)
+	(* 	| "elif" 		{ ELSEIF }*)
+	| "if" 			{ IF }
+	| "else"   		{ ELSE }
+	| "for" 		{ FOR }
+	| "while"		{ WHILE }
+	| "break"		{ BREAK }
+	| "continue"	{ CONTINUE }
 
-    (* Function Declarations and Attributes *)
-    | '~' 			{ TILDA }
-    | "return" 		        { RETURN }
-    | "def"	   		{ DEF }
-    | "defg"   		        { DEFG }
-    | "consts" 		        { CONSTS }
+	(* Function Declarations and Attributes *)
+	| '~' 			{ TILDA }
+	| "return" 		{ RETURN }
+	| "def"	   		{ DEF }
+	| "defg"   		{ DEFG }
+	| "consts" 		{ CONSTS }
 
-    | ("true" | "false") as booleanlit 		  { BOOLEAN_LITERAL(bool_of_string booleanlit)}
-    | '"' (([' '-'!' '#'-'&' '('-'[' ']'-'~'] | '\\' [ '\\' '"' 'n' 'r' 't' '''])* as stringlit) '"' 									      { STRING_LITERAL(stringlit) }
-    | digit* as intlit 	        { INTEGER_LITERAL(int_of_string intlit) }
-    | (sign? digit+ '.' digit*(exp sign? digit+)) | (exp? digit* '.' digit+ (exp sign? digit+)) | (sign? digit exp sign? digit+) as fplit 	{ FLOATING_POINT_LITERAL(float_of_string fplit) }
-    | (letter | '_')(letter | digit | '_')* as id { IDENTIFIER(id) }
-    | eof 		        { get_eof() }
+	| ("true" | "false") as booleanlit 																											{ BOOLEAN_LITERAL(bool_of_string booleanlit)}
+	| '"' (([' '-'!' '#'-'&' '('-'[' ']'-'~'] | '\\' [ '\\' '"' 'n' 'r' 't' '''])* as stringlit) '"' 											{ STRING_LITERAL(stringlit) }
+	| digit+ as intlit 																															{ INTEGER_LITERAL(int_of_string intlit) }
+	| (digit+ '.' digit* | '.' digit+ | digit+ ('.' digit*)? 'e' '-'? digit+ | '.' digit+ 'e' '-'? digit+) as fplit 							{ FLOATING_POINT_LITERAL(float_of_string fplit) }
+	| (letter | '_')(letter | digit | '_')* as id { IDENTIFIER(id) }
+	| eof 																																		{ get_eof() }
 
 (* Blocks for comments *)
 and single_line_comment = parse

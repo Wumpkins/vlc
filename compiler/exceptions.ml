@@ -14,7 +14,7 @@ exception Missing_eof
 (*-------------------------------------Utils-------------------------------------*)
 exception Not_implemented_yet
 (*-------------------------------------Semantic Analyzer-------------------------------------*)
-exception Cannot_infer_expression_type
+exception Cannot_infer_expression_type of string
 exception Exception of string
 exception Already_declared (* Already_declared and Variable_already_declared is redundant*)
 exception Name_not_found of string

@@ -1,10 +1,12 @@
 type binary_operator =
-  | Add | Subtract | Multiply | Divide | Modulo
-    (*     | Plus_Equal | Subtract_Equal | Multiply_Equal | Divide_Equal  *)
-    (*     | Exp | Dot | Matrix_Multiplication *)
-  | And | Or | Xor
-  | Equal | Not_Equal | Greater_Than | Less_Than | Greater_Than_Equal | Less_Than_Equal
-  | Bitshift_Right | Bitshift_Left 
+    | Add | Subtract | Multiply | Divide | Modulo
+(*     | Plus_Equal | Subtract_Equal | Multiply_Equal | Divide_Equal  *)
+(*     | Exp | Dot | Matrix_Multiplication *)
+    | And | Or | Xor
+    | Equal | Not_Equal | Greater_Than | Less_Than | Greater_Than_Equal | Less_Than_Equal
+    | Bitshift_Right | Bitshift_Left 
+    | Bitwise_Or | Bitwise_And
+    
 type unary_operator = 
   | Not  | Negate
   | Plus_Plus | Minus_Minus

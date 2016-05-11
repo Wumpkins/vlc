@@ -6,15 +6,17 @@ type ptx_literal =
   | Ptx_signed_float of float
 
 type ptx_binary_operator =
-  | Ptx_Add | Ptx_Subtract | Ptx_Multiply | Ptx_Divide | Ptx_Modulo
-    (*     | Plus_Equal | Subtract_Equal | Multiply_Equal | Divide_Equal  *)
-    (*     | Exp | Dot | Matrix_Multiplication *)
-  | Ptx_And | Ptx_Or | Ptx_Xor
-  | Ptx_Bitshift_Right | Ptx_Bitshift_Left 
-  | Ptx_Equal | Ptx_Not_Equal | Ptx_Greater_Than | Ptx_Less_Than | Ptx_Greater_Than_Equal 
-  | Ptx_Less_Than_Equal
-(* Ptx_Greater_Than_Unsigned | Ptx_Less_Than_unsigned |
-   Ptx_Greater_Than_Equal_Unsigned | Ptx_Less_Than_Equal_Unsigned *)
+    | Ptx_Add | Ptx_Subtract | Ptx_Multiply | Ptx_Divide | Ptx_Modulo
+(*     | Plus_Equal | Subtract_Equal | Multiply_Equal | Divide_Equal  *)
+(*     | Exp | Dot | Matrix_Multiplication *)
+    | Ptx_And | Ptx_Or | Ptx_Xor
+ 	| Ptx_Bitshift_Right | Ptx_Bitshift_Left 
+    | Ptx_Equal | Ptx_Not_Equal | Ptx_Greater_Than | Ptx_Less_Than | Ptx_Greater_Than_Equal 
+    | Ptx_Less_Than_Equal
+    | Ptx_Bitwise_Or
+    | Ptx_Bitwise_And
+(*     Ptx_Greater_Than_Unsigned | Ptx_Less_Than_unsigned | Ptx_Greater_Than_Equal_Unsigned 
+    | Ptx_Less_Than_Equal_Unsigned  *)
 
 type ptx_unary_operator = 
   | Ptx_Not  | Ptx_Negate
@@ -72,22 +74,23 @@ type ptx_vdecl =
   | Ptx_Vdecl of ptx_state_space *  ptx_variable_type *  ptx_variable
 
 type ptx_expression =
-	(*convert may require some options prior to first data type*)
-  | Ptx_Binop of ptx_binary_operator * ptx_variable_type * ptx_expression * ptx_expression * ptx_expression
-  | Ptx_Unop of ptx_unary_operator * ptx_variable_type * ptx_expression * ptx_expression
-  | Ptx_Load of ptx_state_space * ptx_variable_type * ptx_expression * ptx_expression
-  | Ptx_Store of ptx_state_space * ptx_variable_type * ptx_expression * ptx_expression
-  | Ptx_vdecl of ptx_vdecl
-  | Ptx_Move of ptx_variable_type * ptx_expression * ptx_expression
-  | Ptx_Branch of Ast.identifier
-  | Ptx_Call of ptx_expression * Ast.identifier * ptx_expression list
-  | Ptx_Empty_Call of Ast.identifier * ptx_expression list
-  | Predicated_statement of ptx_expression * ptx_expression
-  | Ptx_Convert of ptx_variable_type * ptx_variable_type * ptx_expression * ptx_expression
-  | Ptx_value_return of ptx_kernel_variable_info
-  | Ptx_expression_variable of ptx_variable
-  | Ptx_empty
-  | Ptx_Return_void
+(*convert may require some options prior to first data type*)
+	| Ptx_Binop of ptx_binary_operator * ptx_variable_type * ptx_expression * ptx_expression * ptx_expression
+	| Ptx_triple of ptx_expression * ptx_expression * ptx_expression
+	| Ptx_Unop of ptx_unary_operator * ptx_variable_type * ptx_expression * ptx_expression
+	| Ptx_Load of ptx_state_space * ptx_variable_type * ptx_expression * ptx_expression
+	| Ptx_Store of ptx_state_space * ptx_variable_type * ptx_expression * ptx_expression
+	| Ptx_vdecl of ptx_vdecl
+	| Ptx_Move of ptx_variable_type * ptx_expression * ptx_expression
+	| Ptx_Branch of Ast.identifier
+	| Ptx_Call of ptx_expression * Ast.identifier * ptx_expression list
+	| Ptx_Empty_Call of Ast.identifier * ptx_expression list
+	| Predicated_statement of ptx_expression * ptx_expression
+	| Ptx_Convert of ptx_variable_type * ptx_variable_type * ptx_expression * ptx_expression
+	| Ptx_value_return of ptx_kernel_variable_info
+	| Ptx_expression_variable of ptx_variable
+	| Ptx_empty
+	| Ptx_Return_void
 
 type ptx_subroutine = {
   routine_name								: Ast.identifier;
@@ -136,32 +139,34 @@ type ptx_fdecl = {
 
 
 type ptx_higher_order_fdecl = {
-    (* Map or reduce *)
-  ptx_higher_order_function_type 		: Ast.identifier; 
-    (* Name of this function  - ex. map123, map1, map2 *)
-  ptx_higher_order_function_name 		: Ast.identifier;
-    (* Name of kernel function that is called by this function *)
-  ptx_applied_kernel_function    		: Ast.identifier;
-    (* List of constants passed in that the function can use *)
-  ptx_higher_order_function_constants 		: ptx_kernel_variable_info list;
-    (* Size of input and return arrays *)
-  ptx_array_length 				: int;
-    (* Input array information 
-	   --If an array has no name (just simply passed in as something like {1,2,3}) then it is given a temporary generated name *)
-  ptx_input_arrays_info				: ptx_kernel_variable_info list; (* type, host name, kernel name *)
+	(* Map or reduce *)
+	ptx_higher_order_function_type 				: Ast.identifier; 
+	(* Name of this function  - ex. map123, map1, map2 *)
+	ptx_higher_order_function_name 				: Ast.identifier;
+	(* Name of kernel function that is called by this function *)
+    ptx_applied_kernel_function    				: Ast.identifier;
+	(* List of constants passed in that the function can use *)
+	ptx_higher_order_function_constants 		: ptx_kernel_variable_info list;
+	(* Size of input and return arrays *)
+	ptx_array_length 							: int;
+	(* Input array information 
+		--If an array has no name (just simply passed in as something like {1,2,3}) then it is given a temporary generated name *)
+	ptx_input_arrays_info						: ptx_pdecl list; (* type, host name, kernel name *)
     (* Return array information *)	
-  ptx_return_array_info              		: ptx_kernel_variable_info; (* type, host name, kernel name*) 
+    ptx_return_array_info              			: ptx_pdecl; (* type, host name, kernel name*) 
     (* Dependent functions*)
   ptx_called_functions 				: Ast.identifier list;   
 }
 (* -----------------------------------------C types -----------------------------------------*)
 type c_binary_operator =
-  | Add | Subtract | Multiply | Divide | Modulo
-    (*     | Plus_Equal | Subtract_Equal | Multiply_Equal | Divide_Equal  *)
-    (*     | Exp | Dot | Matrix_Multiplication *)
-  | And | Or | Xor
-  | Equal | Not_Equal | Greater_Than | Less_Than | Greater_Than_Equal | Less_Than_Equal
-  | Bitshift_Right | Bitshift_Left 
+    | Add | Subtract | Multiply | Divide | Modulo
+(*     | Plus_Equal | Subtract_Equal | Multiply_Equal | Divide_Equal  *)
+(*     | Exp | Dot | Matrix_Multiplication *)
+    | And | Or | Xor
+    | Equal | Not_Equal | Greater_Than | Less_Than | Greater_Than_Equal | Less_Than_Equal
+    | Bitshift_Right | Bitshift_Left 
+    | Bitwise_Or | Bitwise_And
+
 type c_unary_operator = 
   | Not | Negate
   | Plus_Plus | Minus_Minus
