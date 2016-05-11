@@ -1,11 +1,11 @@
 type binary_operator =
-    | Add | Subtract | Multiply | Divide | Modulo
-(*     | Plus_Equal | Subtract_Equal | Multiply_Equal | Divide_Equal  *)
-(*     | Exp | Dot | Matrix_Multiplication *)
-    | And | Or | Xor
-    | Equal | Not_Equal | Greater_Than | Less_Than | Greater_Than_Equal | Less_Than_Equal
-    | Bitshift_Right | Bitshift_Left 
-    | Bitwise_Or | Bitwise_And
+  | Add | Subtract | Multiply | Divide | Modulo
+    (*     | Plus_Equal | Subtract_Equal | Multiply_Equal | Divide_Equal  *)
+    (*     | Exp | Dot | Matrix_Multiplication *)
+  | And | Or | Xor
+  | Equal | Not_Equal | Greater_Than | Less_Than | Greater_Than_Equal | Less_Than_Equal
+  | Bitshift_Right | Bitshift_Left 
+  | Bitwise_Or | Bitwise_And
     
 type unary_operator = 
   | Not  | Negate
@@ -29,19 +29,19 @@ type vdecl =
     Variable_Declaration of variable_type * identifier
 
 type expression =
-    | Function_Call of identifier * expression list
-    | Higher_Order_Function_Call of higher_order_function_call
-    | String_Literal of string
-    | Integer_Literal of int
-    | Boolean_Literal of bool
-    | Floating_Point_Literal of float
-    | Array_Literal of expression list
-    | Identifier_Literal of identifier (* id, is_lvalue *)
-    | Cast of variable_type * expression
-    | Binop of expression * binary_operator * expression
-    | Unop of expression * unary_operator
-    | Array_Accessor of expression * expression list * bool(* array, indexes, is_lvalue *)
-    | Ternary of expression * expression * expression
+  | Function_Call of identifier * expression list
+  | Higher_Order_Function_Call of higher_order_function_call
+  | String_Literal of string
+  | Integer_Literal of int
+  | Boolean_Literal of bool
+  | Floating_Point_Literal of float
+  | Array_Literal of expression list
+  | Identifier_Literal of identifier (* id, is_lvalue *)
+  | Cast of variable_type * expression
+  | Binop of expression * binary_operator * expression
+  | Unop of expression * unary_operator
+  | Array_Accessor of expression * expression list * bool(* array, indexes, is_lvalue *)
+  | Ternary of expression * expression * expression
 and constant = 
   | Constant of identifier * expression
 and higher_order_function_call = {
