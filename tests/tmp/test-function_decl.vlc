@@ -1,0 +1,36 @@
+				
+
+int hello
+				
+int hi
+					
+
+int def add_two(int a, int b):
+	return a + b
+
+
+int def add_three(int a, int b, int c):
+
+					
+
+
+	return a + b + c
+
+int def vlc():
+
+
+
+
+
+
+	print("success")
+
+
+	return 0
+
+
+
+
+
+
+				

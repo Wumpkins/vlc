@@ -8,15 +8,18 @@
 
 NVCC="nvcc"
 
-VLC="./compiler/vlc -c"
+VLC="sudo vlc -c"
 
 globallog=./tests/test.log
 rm -f $globallog
 error=0
 globalerror=0
-
+NC='\033[0m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
 keep=0
-
+pass=0
+fail=0
 Usage() {
     echo "Usage: test.sh [options] [.mc files]"
     echo "-k    Keep intermediate files"
@@ -68,13 +71,13 @@ Check() {
     error=0
     basename=`echo $1 | sed 's/.*\\///
                              s/.vlc//'`
-    reffile=`echo $1 | sed 's/.vlc$//'`
+     reffile=`echo $1 | sed 's/.vlc$//'`
     basedir="`echo $1 | sed 's/\/[^\/]*$//'`/."
 
     echo -n "$basename..."
 
     echo 1>&2
-    echo "###### Testing $basename" 1>&2
+    echo "###### Testing $basename " 1>&2
 
     generatedfiles=""
 
@@ -89,43 +92,49 @@ Check() {
 	fi
 	echo "OK"
 	echo "###### SUCCESS" 1>&2
+	((pass++))
     else
 	echo "###### FAILED" 1>&2
 	globalerror=$error
+	((fail++))
     fi
+    echo -n "$basename 2"
+
 }
 
-# CheckFail() {
-#     error=0
-#     basename=`echo $1 | sed 's/.*\\///
-#                              s/.mc//'`
-#     reffile=`echo $1 | sed 's/.mc$//'`
-#     basedir="`echo $1 | sed 's/\/[^\/]*$//'`/."
+CheckFail() {
+     error=0
+     basename=`echo $1 | sed 's/.*\\///
+                              s/.vlc//'`
 
-#     echo -n "$basename..."
+     echo -n "$basename..."
 
-#     echo 1>&2
-#     echo "###### Testing $basename" 1>&2
+     echo 1>&2
+     echo "###### Testing $basename " 1>&2
 
-#     generatedfiles=""
+     generatedfiles=""
 
-#     generatedfiles="$generatedfiles ${basename}.err ${basename}.diff" &&
-#     RunFail "$MICROC" "<" $1 "2>" "${basename}.err" ">>" $globallog &&
-#     Compare ${basename}.err ${reffile}.err ${basename}.diff
+     generatedfiles="$generatedfiles ./${basename}.out ./${basename}.diff" &&
+     RunFail "$VLC" $1 "2>" "${basename}.out" ">>" $globallog &&
+     Compare "tests/$basename.vlc.err" "./${basename}.out" "./${basename}.diff"
 
-#     # Report the status and clean up the generated files
+     # Report the status and clean up the generated files
 
-#     if [ $error -eq 0 ] ; then
-# 	if [ $keep -eq 0 ] ; then
-# 	    rm -f $generatedfiles
-# 	fi
-# 	echo "OK"
-# 	echo "###### SUCCESS" 1>&2
-#     else
-# 	echo "###### FAILED" 1>&2
-# 	globalerror=$error
-#     fi
-# }
+     if [ $error -eq 0 ] ; then
+ 	if [ $keep -eq 0 ] ; then
+	    rm -f $generatedfiles
+ 	fi
+ 	echo "OK"
+ 	echo "###### SUCCESS" 1>&2
+	((pass++))
+     else
+ 	echo "###### FAILED" 1>&2
+ 	globalerror=$error
+	((fail++))
+     fi
+    rm -f *.out
+    rm -f *.diff
+ }
 
 while getopts kdpsh c; do
     case $c in
@@ -154,7 +163,7 @@ do
 	    Check $file 2>> $globallog
 	    ;;
 	*fail-*)
-
+            CheckFail $file 2>> $globallog
 	    ;;
 	*)
 	    echo "unknown file type $file"
@@ -162,5 +171,7 @@ do
 	    ;;
     esac
 done
-
+echo ""
+echo -e "Tests Passed: $pass"
+echo -e "Tests Failed: $fail"
 exit $globalerror

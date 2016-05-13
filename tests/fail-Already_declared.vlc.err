@@ -1,1 +1,1 @@
-Fatal error: exception Failure("int_of_string")
+Fatal error: exception Exceptions.Variable_already_declared("a")

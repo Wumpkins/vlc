@@ -4,4 +4,4 @@ int defg test(int a):
 
 int def main():
   int[5] a = [1, 2, 3, 4, 5]
-  int[5] b = ~map(test, a)
+  int[5] b = ~map(test, consts=[b=1], a)

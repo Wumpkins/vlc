@@ -1,5 +1,5 @@
 int defg test(string a):
-  return a
+	return a
 
 int def main():
-  return 1
+	return 1

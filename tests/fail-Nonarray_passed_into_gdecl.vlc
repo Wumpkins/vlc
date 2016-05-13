@@ -1,7 +1,7 @@
 int defg test(int i):
-  return 1
+	return 1
 
 int def main():
-  int a = a
-  int c = ~map(a)
-  return 1
+	int a = 1
+	int c = ~map(test, a)
+	return 1

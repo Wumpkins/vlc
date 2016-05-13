@@ -1,6 +1,5 @@
 int def main():
-  int i
-  for (i=0, i<5, i++):
-    int j = j + i
-  
-  return j
+	if(true):
+		int j = 4		
+	j = 5
+	return 1

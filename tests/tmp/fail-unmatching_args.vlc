@@ -1,0 +1,6 @@
+/*PTX arguments do not match*/
+int defg add(float x, int y):
+    return (x + y)
+
+int def vlc():
+    return 0

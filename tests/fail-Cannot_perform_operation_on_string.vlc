@@ -1,5 +1,5 @@
 int def main():
-  string hi = "hello"
-  if(!hi):
-    print("wrong")
-  return 1
+	string hi = "hello"
+	if(!hi):
+		print("wrong")
+	return 1

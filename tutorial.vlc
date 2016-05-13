@@ -1,0 +1,23 @@
+int defg vector_add(int a, int b):
+	return s * (a + b)
+
+int[5] def sequential_add(int[5] a, int[5] b, int s):
+    c[5]
+    for (int i = 0, i < 5, i++):
+        c[i] = s * (a[i] + b[i])
+
+int def main():
+    string hello = "Hello world!"
+    int[5] a = {1,2,3,4,5}
+    int[5] b = {1,2,3,4,5}
+    int scale = 5
+
+    int[5] c = sequential_add(a,b,scale)
+    int[5] d = ~map(vector_add, consts(s=scale), a, b)
+
+    print(hello)
+    print("Sequential add: ")
+    for (int i=0, i <5, i++):
+        print(c[i])
+    for(int i=0, i < 5, i++):
+        print(d[i])

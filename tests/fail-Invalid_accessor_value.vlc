@@ -1,4 +1,4 @@
 int def main():
-  int[1] a = [0]
-  a[2]
-  return 1
+	int[1] a = [0]
+	a[2] = 3
+	return 1
