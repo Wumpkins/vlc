@@ -20,15 +20,15 @@ let rec get_tokens_with_dedents original_token_list new_token_list=
   in
   if (List.length(original_token_list)) != 0 then
     match (List.hd original_token_list) with
-      | DEDENT_COUNT(c) -> 
-        let temp1 = (List.rev (TERMINATOR::(List.rev new_token_list))) in
-        let temp = fill_dedent c temp1 in
-        get_tokens_with_dedents (List.tl original_token_list) temp
-      | DEDENT_EOF(c) ->
-        let temp1 = (List.rev (TERMINATOR::(List.rev new_token_list))) in
-        let temp = fill_dedent c temp1 in
-        List.rev(EOF::(List.rev temp));
-      | _ as token -> get_tokens_with_dedents (List.tl original_token_list) (List.rev (token :: (List.rev new_token_list)))
+    | DEDENT_COUNT(c) -> 
+       let temp1 = (List.rev (TERMINATOR::(List.rev new_token_list))) in
+       let temp = fill_dedent c temp1 in
+       get_tokens_with_dedents (List.tl original_token_list) temp
+    | DEDENT_EOF(c) ->
+       let temp1 = (List.rev (TERMINATOR::(List.rev new_token_list))) in
+       let temp = fill_dedent c temp1 in
+       List.rev(EOF::(List.rev temp));
+    | _ as token -> get_tokens_with_dedents (List.tl original_token_list) (List.rev (token :: (List.rev new_token_list)))
   else
     new_token_list
 
@@ -43,17 +43,17 @@ let get_token_list lexbuf =
   let original_token_list = get_tokens lexbuf in 
   let new_token_list = get_tokens_with_dedents original_token_list [] in
   let filtered_token_list = filter_opening_whitespace new_token_list
-in filtered_token_list
+  in filtered_token_list
 
 (* Parse function *)
 let parser token_list = 
   let token_list = ref(token_list) in
   let tokenizer _ =
     match !token_list with
-        | head :: tail -> 
-            last_token := head;
-            token_list := tail;
-            head
-        | [] -> raise (Exceptions.Missing_eof) in
+    | head :: tail -> 
+       last_token := head;
+      token_list := tail;
+      head
+    | [] -> raise (Exceptions.Missing_eof) in
   let program = Parser.program tokenizer (Lexing.from_string "") in 
   program
